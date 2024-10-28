@@ -16,10 +16,10 @@
 </head>
 
 <body>
-    <div id="info">Press space key to create new tower.<br>Press return key to start/stop physics simulation.<br>Press and hold mouse button for slow motion.<br>Use mouse to control view.</div>
+    <div id="info"><b>Press space key to create new tower.<br>Press return key to start/stop physics simulation.</b><br>Press and hold mouse button for slow motion.<br>Use mouse to control view.<br>Hover over block to display data.</div>
     <div id="container">
-<!--     	<div id="hoverBox" style="position: absolute; display: none; background: #FFF; padding: 8px; border: 1px solid #333; border-radius: 4px;"></div>     	
-    </div> -->
+    	<div id="hoverBox" style="position: absolute; display: none; background: #FFF; padding: 8px; border: 1px solid #333; border-radius: 4px;"></div>     	
+    </div>
     <script src="libs/ammo.wasm.js"></script>
     <script src="libs/d3.v5.js"></script>
     <script type="importmap">
@@ -61,6 +61,11 @@
 
 		let timeDiv = 1
 
+		// Initialize raycaster and mouse vector
+		const raycaster = new THREE.Raycaster();
+		const mouse = new THREE.Vector2();
+
+
 		// Ammo is the name of the physics library being used
 		Ammo().then( function ( AmmoLib ) {
 
@@ -91,7 +96,7 @@
 			scene = new THREE.Scene();
 			scene.background = new THREE.Color( 0xbfd1e5 );
 
-			camera.position.set( - 7, 5, 8 );
+			camera.position.set( -12, 24, -12 );
 
 			renderer = new THREE.WebGLRenderer( { antialias: true } );
 			renderer.setPixelRatio( window.devicePixelRatio );
@@ -240,6 +245,8 @@
 				            );
 				    		brick.castShadow = true;
 				    		brick.receiveShadow = true;
+				    		brick.userData.index = j * numBricksPerLayer + i;
+				    		brick.userData.region = data[j].macro_region;
 				    	}
 
 				    	if (isOddLayer) {
@@ -321,30 +328,23 @@ function createMaterial(color) {
 
 function initInput() {
 
-	// window.addEventListener( 'keydown', function ( event ) {
+	document.addEventListener('mousedown', () => timeDiv = 10);
+	document.addEventListener('mouseup', () => timeDiv = 1);
+	// Add mouse move event listener
+	document.addEventListener('mousemove', onMouseMove);
+	
+	// Function to handle the spacebar press
+	document.addEventListener('keydown', (event) => {
+	    if (event.key === " " || event.keyCode === 32) {
+	    	runPhysics=!runPhysics;
+	        removeAllBlocks();  // Clear previous blocks
+	        createObjects();    // Create new blocks
+	    }
+	    else if (event.keyCode === 13) runPhysics=!runPhysics; // toggle physic simulation on/off
 
-	// 	switch ( event.keyCode ) {
-
-	// 				// Q
-	// 	case 81:
-	// 		armMovement = 1;
-	// 		break;
-
-	// 				// A
-	// 	case 65:
-	// 		armMovement = - 1;
-	// 		break;
-
-	// 	}
-
-	// } );
-
-	// window.addEventListener( 'keyup', function () {
-
-	// 	armMovement = 0;
-
-	// } );
-
+	});
+	
+	
 }
 
 function onWindowResize() {
@@ -401,11 +401,6 @@ function updatePhysics( deltaTime ) {
 
 }
 
-// let timeDiv = 1;
-
-document.addEventListener('mousedown', () => timeDiv = 10);
-document.addEventListener('mouseup', () => timeDiv = 1);
-
 function removeAllBlocks() {
     // Remove rigid bodies from the physics world
         rigidBodies.forEach(obj => {
@@ -415,18 +410,42 @@ function removeAllBlocks() {
     rigidBodies.length = 0;  // Clear the array
 }
 
-// Function to handle the spacebar press
-document.addEventListener('keydown', (event) => {
-    if (event.key === " " || event.keyCode === 32) {
-    	runPhysics=!runPhysics;
-        removeAllBlocks();  // Clear previous blocks
-        createObjects();    // Create new blocks
+
+function onMouseMove(event) {
+    // Calculate normalized mouse position
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+    // Perform raycasting
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(rigidBodies);
+
+    // Check if any block is intersected
+    if (intersects.length > 0) {
+        const intersectedBlock = intersects[0].object;
+        
+        // Display index information (or other data)
+        showBlockInfo(intersectedBlock);
+    } else {
+        hideBlockInfo(); // Hide info when not hovering over a block
     }
-    else if (event.keyCode === 13) {
-        runPhysics=!runPhysics; // toggle physic simulation on/off
-        console.log(runPhysics)
-    }
-});
+ 	// console.log(camera.position)
+}
+
+// Function to display block info (create a div or tooltip as needed)
+function showBlockInfo(block) {
+    const hoverBox = document.getElementById('hoverBox');
+    hoverBox.style.display = 'block';
+    hoverBox.innerHTML = `Block Index: ${block.userData.index}<br>Region: ${block.userData.region}`;
+    hoverBox.style.top = `${event.clientY}px`;
+    hoverBox.style.left = `${event.clientX + 15}px`;
+}
+
+function hideBlockInfo() {
+    const hoverBox = document.getElementById('hoverBox');
+    hoverBox.style.display = 'none';
+}
+
 
 </script>
 </body>

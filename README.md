@@ -1,7 +1,9 @@
 # Complexity-Jenga
  
-Press space key to create new random Jenga tower.
+Press space key to create new tower.
 Press return key to start/stop physics simulation.
+
+Hover over block to display data.
 
 Press and hold mouse button for slow motion.
 Use scrollwheel to zoom in & out
