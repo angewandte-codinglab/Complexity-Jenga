@@ -1,7 +1,7 @@
 <html lang="en">
 
 <head>
-    <title>Amjs Jenga Demo</title>
+    <title>Supply Chain Jenga Demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <link type="text/css" rel="stylesheet" href="main.css">
@@ -14,7 +14,9 @@
 
 <body>
     <!-- <div id="info">Ammo.js physics soft body rope demo<br>Press Q or A to move the arm.</div> -->
-    <div id="container"></div>
+    <div id="container">
+    	<div id="infoBox" style="position: absolute; display: none; background: #FFF; padding: 8px; border: 1px solid #333; border-radius: 4px;"></div>     	
+    </div>
     <script src="libs/ammo.wasm.js"></script>
     <script src="libs/d3.v5.js"></script>
     <script type="importmap">
@@ -48,14 +50,15 @@
 		let physicsWorld;
 		const rigidBodies = [];
 		const margin = 0.05;
-		let hinge;
-		let rope;
+		// let hinge;
+		// let rope;
 		let transformAux1;
 
-		let armMovement = 0;
+		let runPhysics = false;
 
 		let timeDiv = 1
 
+		// Ammo is the name of the physics library being used
 		Ammo().then( function ( AmmoLib ) {
 
 			Ammo = AmmoLib;
@@ -174,6 +177,9 @@
 			const colorScale = d3.scaleOrdinal()
 			  .range(['#7a98d6', '#E9A2C5', '#d6cb63', '#52bb7e', '#85B1B1', '#B99068'])//six colors for six macro regions
 
+			  // Africa	America Latin & Caribbean 	America North	Asia 	Europe	Oceania	
+			  // brown 	green 						yellow			grey 	pink 	blue
+
 			//get data
 			const dataFile = d3.csv('./data/importance_measures.csv', parse)
 			function parse(d){
@@ -215,6 +221,7 @@
 
 				    //get region color for this country
 				    const color = colorScale(data[j].macro_region)
+				    console.log(color, data[j].macro_region)
 
 				    //use stablility value to define numBricksPerLayer and positions
 				    for (let i = 0; i < numBricksPerLayer; i++) {
@@ -311,29 +318,29 @@ function createMaterial(color) {
 
 function initInput() {
 
-	window.addEventListener( 'keydown', function ( event ) {
+	// window.addEventListener( 'keydown', function ( event ) {
 
-		switch ( event.keyCode ) {
+	// 	switch ( event.keyCode ) {
 
-					// Q
-		case 81:
-			armMovement = 1;
-			break;
+	// 				// Q
+	// 	case 81:
+	// 		armMovement = 1;
+	// 		break;
 
-					// A
-		case 65:
-			armMovement = - 1;
-			break;
+	// 				// A
+	// 	case 65:
+	// 		armMovement = - 1;
+	// 		break;
 
-		}
+	// 	}
 
-	} );
+	// } );
 
-	window.addEventListener( 'keyup', function () {
+	// window.addEventListener( 'keyup', function () {
 
-		armMovement = 0;
+	// 	armMovement = 0;
 
-	} );
+	// } );
 
 }
 
@@ -357,7 +364,7 @@ function render() {
 
 	const deltaTime = clock.getDelta();
 
-	updatePhysics( deltaTime );
+	if (runPhysics) updatePhysics( deltaTime );
 
 	renderer.render( scene, camera );
 
@@ -408,8 +415,13 @@ function removeAllBlocks() {
 // Function to handle the spacebar press
 document.addEventListener('keydown', (event) => {
     if (event.key === " " || event.keyCode === 32) {
+    	runPhysics=!runPhysics;
         removeAllBlocks();  // Clear previous blocks
         createObjects();    // Create new blocks
+    }
+    else if (event.keyCode === 13) {
+        runPhysics=!runPhysics; // toggle physic simulation on/off
+        console.log(runPhysics)
     }
 });
 
