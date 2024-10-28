@@ -9,14 +9,17 @@
         body {
 			color: #333;
 		}
+		#info {
+			text-align: left;
+		}
 	</style>
 </head>
 
 <body>
-    <!-- <div id="info">Ammo.js physics soft body rope demo<br>Press Q or A to move the arm.</div> -->
+    <div id="info">Press space key to create new tower.<br>Press return key to start/stop physics simulation.<br>Press and hold mouse button for slow motion.<br>Use mouse to control view.</div>
     <div id="container">
-    	<div id="infoBox" style="position: absolute; display: none; background: #FFF; padding: 8px; border: 1px solid #333; border-radius: 4px;"></div>     	
-    </div>
+<!--     	<div id="hoverBox" style="position: absolute; display: none; background: #FFF; padding: 8px; border: 1px solid #333; border-radius: 4px;"></div>     	
+    </div> -->
     <script src="libs/ammo.wasm.js"></script>
     <script src="libs/d3.v5.js"></script>
     <script type="importmap">
