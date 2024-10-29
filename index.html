@@ -35,12 +35,14 @@
 
 		import Stats from 'three/addons/stats.module.js';
 
+		import { DragControls } from 'three/addons/DragControls.js';
 		import { OrbitControls } from 'three/addons/OrbitControls.js';
 
 		// Graphics variables
 		let container, stats;
 		let camera, controls, scene, renderer;
 		let textureLoader;
+		let objects;
 		const clock = new THREE.Clock();
 
 		// Physics variables
@@ -81,10 +83,12 @@
 
 			initPhysics();
 
-			createObjects();
-
 			initInput();
 
+			const objects = [...createObjects()];
+
+			controls = new DragControls( objects, camera, renderer.domElement );
+			controls.update();
 		}
 
 		function initGraphics() {
@@ -92,11 +96,10 @@
 			container = document.getElementById( 'container' );
 
 			camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.2, 2000 );
+			camera.position.set( -12, 24, -12 );
 
 			scene = new THREE.Scene();
-			scene.background = new THREE.Color( 0xbfd1e5 );
-
-			camera.position.set( -12, 24, -12 );
+			scene.background = new THREE.Color( 0xCCCCCC );
 
 			renderer = new THREE.WebGLRenderer( { antialias: true } );
 			renderer.setPixelRatio( window.devicePixelRatio );
@@ -183,10 +186,10 @@
 
 			//prepare region color
 			const colorScale = d3.scaleOrdinal()
-			  .range(['#7a98d6', '#E9A2C5', '#d6cb63', '#52bb7e', '#85B1B1', '#B99068'])//six colors for six macro regions
-
+			  .range(['#492DA3', '#ED2B2B', '#1A8E8E', '#ED832B', '#22BE22', '#EDCC2B'])//six colors for six macro regions
+			  
 			  // Africa	America Latin & Caribbean 	America North	Asia 	Europe	Oceania	
-			  // brown 	green 						yellow			grey 	pink 	blue
+			  // yellow orange 						teal			green 	red 	indigo
 
 			//get data
 			const dataFile = d3.csv('./data/importance_measures.csv', parse)
@@ -201,6 +204,7 @@
 			
 			//access data
 			dataFile.then((data) => {
+				let objects = [];
 				console.log(data)
 				//set macro_region list for color scale, the order matches to colors in '.range'
 				colorScale.domain(Array.from(new Set(data.map(d => d.macro_region))))
@@ -235,18 +239,21 @@
 				    for (let i = 0; i < numBricksPerLayer; i++) {
 				    	if (Math.random() < .8) {
 				    		const brick = createParalellepiped(
-				            brickLength, // Length of the brick
-				            brickHeight, // Height of the brick
-				            brickDepth,  // Depth of the brick
-				            brickMass,   // Mass of the brick
-				            pos,         // Position of the brick
-				            quat,        // Rotation
-				            createMaterial(color) // Material of the brick
+								brickLength, // Length of the brick
+								brickHeight, // Height of the brick
+								brickDepth,  // Depth of the brick
+								brickMass,   // Mass of the brick
+								pos,         // Position of the brick
+								quat,        // Rotation
+								createMaterial(color) // Material of the brick
 				            );
+
 				    		brick.castShadow = true;
 				    		brick.receiveShadow = true;
 				    		brick.userData.index = j * numBricksPerLayer + i;
 				    		brick.userData.region = data[j].macro_region;
+
+							objects.push(brick);
 				    	}
 
 				    	if (isOddLayer) {
@@ -261,7 +268,7 @@
 				    }
 				}
 
-
+			return objects;
 			})
 
 		}
@@ -328,8 +335,24 @@ function createMaterial(color) {
 
 function initInput() {
 
-	document.addEventListener('mousedown', () => timeDiv = 10);
-	document.addEventListener('mouseup', () => timeDiv = 1);
+	document.addEventListener('mousedown', event => {
+		if (event.button == 0) { // left click for mouse
+			timeDiv = 10;
+		} else if (event.button == 1) { // wheel click for mouse
+			
+		} else if (event.button == 2){   // right click for mouse
+			// drag and drop goes here
+		}
+	});
+	document.addEventListener('mouseup', event => {
+		if (event.button == 0) { // left click for mouse
+			timeDiv = 1;
+		} else if (event.button == 1) { // wheel click for mouse
+			
+		} else if (event.button == 2){   // right click for mouse
+			// drag and drop goes here
+		}
+	});
 	// Add mouse move event listener
 	document.addEventListener('mousemove', onMouseMove);
 	
