@@ -42,7 +42,8 @@
 		let container, stats;
 		let camera, controls, scene, renderer;
 		let textureLoader;
-		let objects;
+		let enableSelection = false;
+		let objects = [];
 		const clock = new THREE.Clock();
 
 		// Physics variables
@@ -85,7 +86,7 @@
 
 			initInput();
 
-			const objects = [...createObjects()];
+			createObjects();
 
 			controls = new DragControls( objects, camera, renderer.domElement );
 			controls.update();
@@ -204,7 +205,6 @@
 			
 			//access data
 			dataFile.then((data) => {
-				let objects = [];
 				console.log(data)
 				//set macro_region list for color scale, the order matches to colors in '.range'
 				colorScale.domain(Array.from(new Set(data.map(d => d.macro_region))))
@@ -356,14 +356,20 @@ function initInput() {
 	// Add mouse move event listener
 	document.addEventListener('mousemove', onMouseMove);
 	
-	// Function to handle the spacebar press
+	// Function to handle the spacebar and enter press
 	document.addEventListener('keydown', (event) => {
-	    if (event.key === " " || event.keyCode === 32) {
-	    	runPhysics=!runPhysics;
-	        removeAllBlocks();  // Clear previous blocks
-	        createObjects();    // Create new blocks
-	    }
-	    else if (event.keyCode === 13) runPhysics=!runPhysics; // toggle physic simulation on/off
+
+		if (event.key === " " || event.keyCode === 32) {
+			runPhysics=false;
+			removeAllBlocks();  // Clear previous blocks
+			createObjects();    // Create new blocks
+		}
+		else if (event.keyCode === 13) {
+			runPhysics=!runPhysics; // toggle physic simulation on/off
+		}
+		else if ( event.keyCode === 77 ) {
+			controls.touches.ONE = ( controls.touches.ONE === THREE.TOUCH.PAN ) ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN;
+		}
 
 	});
 	
