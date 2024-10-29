@@ -334,24 +334,19 @@ function createMaterial(color) {
 }
 
 function initInput() {
+	// if (event.button == 0) { // left click for mouse
+	// } else if (event.button == 1) { // wheel click for mouse
+	// } else if (event.button == 2){   // right click for mouse
+	// }
 
 	document.addEventListener('mousedown', event => {
-		if (event.button == 0) { // left click for mouse
-			timeDiv = 10;
-		} else if (event.button == 1) { // wheel click for mouse
-			
-		} else if (event.button == 2){   // right click for mouse
-			// drag and drop goes here
-		}
+		timeDiv = 10;
 	});
 	document.addEventListener('mouseup', event => {
-		if (event.button == 0) { // left click for mouse
-			timeDiv = 1;
-		} else if (event.button == 1) { // wheel click for mouse
-			
-		} else if (event.button == 2){   // right click for mouse
-			// drag and drop goes here
-		}
+		timeDiv = 1;
+
+		objects = [...controls.objects];
+		console.log("Objects updated");
 	});
 	// Add mouse move event listener
 	document.addEventListener('mousemove', onMouseMove);
