@@ -16,7 +16,7 @@
 </head>
 
 <body>
-    <div id="info"><b>Press space key to create new tower.<br>Press return key to start/stop physics simulation.</b><br>Press and hold mouse button for slow motion.<br>Use mouse to control view.<br>Hover over block to display data.</div>
+    <div id="info"><b>Press space key to create new tower.<br>Press return key to start/stop physics simulation.</b><br>Press and hold mouse button for slow motion.<br>Use right mouse button to drag and drop a piece.<br>Use middle mouse button to orbit the view.<br>Use right mouse button to pan the camera.<br>Hover over block to display data.</div>
     <div id="container">
     	<div id="hoverBox" style="position: absolute; display: none; background: #FFF; padding: 8px; border: 1px solid #333; border-radius: 4px;"></div>     	
     </div>
@@ -90,6 +90,33 @@
 
 			controls = new DragControls( objects, camera, renderer.domElement );
 			controls.update();
+
+			controls.addEventListener('dragend', function (event) {
+				const object = event.object;
+
+				// Retrieve the physics body linked to the object
+				const physicsBody = object.userData.physicsBody;
+
+				if (physicsBody) {
+					const transform = new Ammo.btTransform();
+					transform.setIdentity();
+
+					// Set the new position
+					const position = object.position;
+					transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+
+					// Set the new orientation
+					const quaternion = object.quaternion;
+					transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
+
+					// Update the physics body's transform
+					physicsBody.setWorldTransform(transform);
+
+					// Optional: Clear the velocity to avoid unexpected movement after dragging
+					physicsBody.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
+					physicsBody.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
+				}
+			});
 		}
 
 		function initGraphics() {
@@ -343,10 +370,7 @@ function initInput() {
 		timeDiv = 10;
 	});
 	document.addEventListener('mouseup', event => {
-		timeDiv = 1;
-
-		objects = [...controls.objects];
-		console.log("Objects updated");
+		timeDiv = 1;;
 	});
 	// Add mouse move event listener
 	document.addEventListener('mousemove', onMouseMove);

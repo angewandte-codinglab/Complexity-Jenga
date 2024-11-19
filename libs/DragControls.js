@@ -47,7 +47,7 @@ class DragControls extends Controls {
 
 		// interaction
 
-		this.mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: MOUSE.PAN, RIGHT: MOUSE.ROTATE };
+		this.mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: null, RIGHT: null };
 		this.touches = { ONE: TOUCH.PAN };
 
 		// event listeners
