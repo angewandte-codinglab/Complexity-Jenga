@@ -1,7 +1,7 @@
 <html lang="en">
 
 <head>
-    <title>Amjs Jenga Demo</title>
+    <title>Supply Chain Jenga Demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <link type="text/css" rel="stylesheet" href="main.css">
@@ -9,12 +9,17 @@
         body {
 			color: #333;
 		}
+		#info {
+			text-align: left;
+		}
 	</style>
 </head>
 
 <body>
-    <!-- <div id="info">Ammo.js physics soft body rope demo<br>Press Q or A to move the arm.</div> -->
-    <div id="container"></div>
+    <div id="info"><b>Press space key to create new tower.<br>Press return key to start/stop physics simulation.</b><br>Press and hold mouse button for slow motion.<br>Use left mouse button to drag and drop a piece.<br>Use middle mouse button to orbit the view.<br>Use right mouse button to pan the camera.<br>Hover over block to display data.</div>
+    <div id="container">
+    	<div id="hoverBox" style="position: absolute; display: none; background: #FFF; padding: 8px; border: 1px solid #333; border-radius: 4px;"></div>     	
+    </div>
     <script src="libs/ammo.wasm.js"></script>
     <script src="libs/d3.v5.js"></script>
     <script type="importmap">
@@ -30,12 +35,15 @@
 
 		import Stats from 'three/addons/stats.module.js';
 
+		import { DragControls } from 'three/addons/DragControls.js';
 		import { OrbitControls } from 'three/addons/OrbitControls.js';
 
 		// Graphics variables
 		let container, stats;
 		let camera, controls, scene, renderer;
 		let textureLoader;
+		let enableSelection = false;
+		let objects = [];
 		const clock = new THREE.Clock();
 
 		// Physics variables
@@ -48,14 +56,20 @@
 		let physicsWorld;
 		const rigidBodies = [];
 		const margin = 0.05;
-		let hinge;
-		let rope;
+		// let hinge;
+		// let rope;
 		let transformAux1;
 
-		let armMovement = 0;
+		let runPhysics = false;
 
 		let timeDiv = 1
 
+		// Initialize raycaster and mouse vector
+		const raycaster = new THREE.Raycaster();
+		const mouse = new THREE.Vector2();
+
+
+		// Ammo is the name of the physics library being used
 		Ammo().then( function ( AmmoLib ) {
 
 			Ammo = AmmoLib;
@@ -70,10 +84,39 @@
 
 			initPhysics();
 
-			createObjects();
-
 			initInput();
 
+			createObjects();
+
+			controls = new DragControls( objects, camera, renderer.domElement );
+			controls.update();
+
+			controls.addEventListener('dragend', function (event) {
+				const object = event.object;
+
+				// Retrieve the physics body linked to the object
+				const physicsBody = object.userData.physicsBody;
+
+				if (physicsBody) {
+					const transform = new Ammo.btTransform();
+					transform.setIdentity();
+
+					// Set the new position
+					const position = object.position;
+					transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+
+					// Set the new orientation
+					const quaternion = object.quaternion;
+					transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
+
+					// Update the physics body's transform
+					physicsBody.setWorldTransform(transform);
+
+					// Optional: Clear the velocity to avoid unexpected movement after dragging
+					physicsBody.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
+					physicsBody.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
+				}
+			});
 		}
 
 		function initGraphics() {
@@ -81,11 +124,10 @@
 			container = document.getElementById( 'container' );
 
 			camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.2, 2000 );
+			camera.position.set( -12, 24, -12 );
 
 			scene = new THREE.Scene();
-			scene.background = new THREE.Color( 0xbfd1e5 );
-
-			camera.position.set( - 7, 5, 8 );
+			scene.background = new THREE.Color( 0xCCCCCC );
 
 			renderer = new THREE.WebGLRenderer( { antialias: true } );
 			renderer.setPixelRatio( window.devicePixelRatio );
@@ -172,7 +214,10 @@
 
 			//prepare region color
 			const colorScale = d3.scaleOrdinal()
-			  .range(['#7a98d6', '#E9A2C5', '#d6cb63', '#52bb7e', '#85B1B1', '#B99068'])//six colors for six macro regions
+			  .range(['#492DA3', '#ED2B2B', '#1A8E8E', '#ED832B', '#22BE22', '#EDCC2B'])//six colors for six macro regions
+			  
+			  // Africa	America Latin & Caribbean 	America North	Asia 	Europe	Oceania	
+			  // yellow orange 						teal			green 	red 	indigo
 
 			//get data
 			const dataFile = d3.csv('./data/importance_measures.csv', parse)
@@ -215,21 +260,27 @@
 
 				    //get region color for this country
 				    const color = colorScale(data[j].macro_region)
+				    console.log(color, data[j].macro_region)
 
 				    //use stablility value to define numBricksPerLayer and positions
 				    for (let i = 0; i < numBricksPerLayer; i++) {
 				    	if (Math.random() < .8) {
 				    		const brick = createParalellepiped(
-				            brickLength, // Length of the brick
-				            brickHeight, // Height of the brick
-				            brickDepth,  // Depth of the brick
-				            brickMass,   // Mass of the brick
-				            pos,         // Position of the brick
-				            quat,        // Rotation
-				            createMaterial(color) // Material of the brick
+								brickLength, // Length of the brick
+								brickHeight, // Height of the brick
+								brickDepth,  // Depth of the brick
+								brickMass,   // Mass of the brick
+								pos,         // Position of the brick
+								quat,        // Rotation
+								createMaterial(color) // Material of the brick
 				            );
+
 				    		brick.castShadow = true;
 				    		brick.receiveShadow = true;
+				    		brick.userData.index = j * numBricksPerLayer + i;
+				    		brick.userData.region = data[j].macro_region;
+
+							objects.push(brick);
 				    	}
 
 				    	if (isOddLayer) {
@@ -244,7 +295,7 @@
 				    }
 				}
 
-
+			return objects;
 			})
 
 		}
@@ -310,31 +361,38 @@ function createMaterial(color) {
 }
 
 function initInput() {
+	// if (event.button == 0) { // left click for mouse
+	// } else if (event.button == 1) { // wheel click for mouse
+	// } else if (event.button == 2){   // right click for mouse
+	// }
 
-	window.addEventListener( 'keydown', function ( event ) {
+	document.addEventListener('mousedown', event => {
+		timeDiv = 10;
+	});
+	document.addEventListener('mouseup', event => {
+		timeDiv = 1;;
+	});
+	// Add mouse move event listener
+	document.addEventListener('mousemove', onMouseMove);
+	
+	// Function to handle the spacebar and enter press
+	document.addEventListener('keydown', (event) => {
 
-		switch ( event.keyCode ) {
-
-					// Q
-		case 81:
-			armMovement = 1;
-			break;
-
-					// A
-		case 65:
-			armMovement = - 1;
-			break;
-
+		if (event.key === " " || event.keyCode === 32) {
+			runPhysics=false;
+			removeAllBlocks();  // Clear previous blocks
+			createObjects();    // Create new blocks
+		}
+		else if (event.keyCode === 13) {
+			runPhysics=!runPhysics; // toggle physic simulation on/off
+		}
+		else if ( event.keyCode === 77 ) {
+			controls.touches.ONE = ( controls.touches.ONE === THREE.TOUCH.PAN ) ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN;
 		}
 
-	} );
-
-	window.addEventListener( 'keyup', function () {
-
-		armMovement = 0;
-
-	} );
-
+	});
+	
+	
 }
 
 function onWindowResize() {
@@ -357,7 +415,7 @@ function render() {
 
 	const deltaTime = clock.getDelta();
 
-	updatePhysics( deltaTime );
+	if (runPhysics) updatePhysics( deltaTime );
 
 	renderer.render( scene, camera );
 
@@ -391,11 +449,6 @@ function updatePhysics( deltaTime ) {
 
 }
 
-// let timeDiv = 1;
-
-document.addEventListener('mousedown', () => timeDiv = 10);
-document.addEventListener('mouseup', () => timeDiv = 1);
-
 function removeAllBlocks() {
     // Remove rigid bodies from the physics world
         rigidBodies.forEach(obj => {
@@ -405,13 +458,42 @@ function removeAllBlocks() {
     rigidBodies.length = 0;  // Clear the array
 }
 
-// Function to handle the spacebar press
-document.addEventListener('keydown', (event) => {
-    if (event.key === " " || event.keyCode === 32) {
-        removeAllBlocks();  // Clear previous blocks
-        createObjects();    // Create new blocks
+
+function onMouseMove(event) {
+    // Calculate normalized mouse position
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+    // Perform raycasting
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(rigidBodies);
+
+    // Check if any block is intersected
+    if (intersects.length > 0) {
+        const intersectedBlock = intersects[0].object;
+        
+        // Display index information (or other data)
+        showBlockInfo(intersectedBlock);
+    } else {
+        hideBlockInfo(); // Hide info when not hovering over a block
     }
-});
+ 	// console.log(camera.position)
+}
+
+// Function to display block info (create a div or tooltip as needed)
+function showBlockInfo(block) {
+    const hoverBox = document.getElementById('hoverBox');
+    hoverBox.style.display = 'block';
+    hoverBox.innerHTML = `Block Index: ${block.userData.index}<br>Region: ${block.userData.region}`;
+    hoverBox.style.top = `${event.clientY}px`;
+    hoverBox.style.left = `${event.clientX + 15}px`;
+}
+
+function hideBlockInfo() {
+    const hoverBox = document.getElementById('hoverBox');
+    hoverBox.style.display = 'none';
+}
+
 
 </script>
 </body>
