@@ -201,12 +201,12 @@
 			const ground = createParalellepiped( 40, 1, 40, 0, pos, quat, new THREE.MeshPhongMaterial( { color: 0xFFFFFF } ) );
 			ground.castShadow = true;
 			ground.receiveShadow = true;
-			textureLoader.load( 'textures/grid.png', function ( texture ) {
+			textureLoader.load( 'textures/bg4.jpg', function ( texture ) {
 
 				texture.colorSpace = THREE.SRGBColorSpace;
 				texture.wrapS = THREE.RepeatWrapping;
 				texture.wrapT = THREE.RepeatWrapping;
-				texture.repeat.set( 40, 40 );
+				texture.repeat.set( 1, 1 );
 				ground.material.map = texture;
 				ground.material.needsUpdate = true;
 
@@ -214,8 +214,18 @@
 
 			//prepare region color
 			const colorScale = d3.scaleOrdinal()
-			  .range(['#492DA3', '#ED2B2B', '#1A8E8E', '#ED832B', '#22BE22', '#EDCC2B'])//six colors for six macro regions
-			  
+			  //blue-pink-pastels
+			  //.range(['#C8D8DB', '#5897A5', '#892887', '#7F6EB2', '#F283B4', '#184B56'])//six colors for six macro regions
+			  //mondrianesque colors
+			  //.range(['#30303A', '#ff0101', '#0101fd', '#f9f9f9', '#fff001', '#196087'])//six colors for six macro regions
+			  //muted rainbow colors 1
+			  //.range(['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#ee8959', '#e76f51'])//six colors for six macro regions
+			  //muted rainbow colors 2
+			  //.range(['#ef476f', '#f78c6b', '#ffd166', '#06d6a0', '#118ab2', '#073b4c'])//six colors for six macro regions
+ 			  //pop-childish colors
+			  .range(['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff'])//six colors for six macro regions
+
+
 			  // Africa	America Latin & Caribbean 	America North	Asia 	Europe	Oceania	
 			  // yellow orange 						teal			green 	red 	indigo
 
@@ -279,6 +289,14 @@
 				    		brick.receiveShadow = true;
 				    		brick.userData.index = j * numBricksPerLayer + i;
 				    		brick.userData.region = data[j].macro_region;
+						brick.userData.country = data[j].country; 
+						brick.userData.companies = data[j].number_of_companies; 
+						brick.userData.centrality = data[j].mean_betweeness_centrality; 
+						brick.userData.pagerank = data[j].mean_pagerank; 
+
+
+
+
 
 							objects.push(brick);
 				    	}
@@ -480,11 +498,20 @@ function onMouseMove(event) {
  	// console.log(camera.position)
 }
 
+
 // Function to display block info (create a div or tooltip as needed)
 function showBlockInfo(block) {
     const hoverBox = document.getElementById('hoverBox');
     hoverBox.style.display = 'block';
-    hoverBox.innerHTML = `Block Index: ${block.userData.index}<br>Region: ${block.userData.region}`;
+    hoverBox.innerHTML = `
+        <div class="title">${block.userData.country}, ${block.userData.region}</div>
+        <div class="subtitle">
+            This country contains ${block.userData.companies} companies, connected to the global network with an average betweenness centrality of ${block.userData.centrality} and based on an average PageRank of ${block.userData.pagerank}. Further details are displayed below.
+        </div>
+        <div id="infographicBox">
+            Add infographics here
+        </div>
+    `;
     hoverBox.style.top = `${event.clientY}px`;
     hoverBox.style.left = `${event.clientX + 15}px`;
 }

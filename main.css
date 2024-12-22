@@ -89,3 +89,42 @@ a, button, input, select {
 	margin-top: 20px;
 	padding: 10px;
 }
+
+#hoverBox {
+    position: absolute;
+    display: none;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 350px;
+    z-index: 1000;
+    font-family: Arial, sans-serif;
+    color: #000;
+}
+
+#hoverBox .title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+#hoverBox .subtitle {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+#infographicBox {
+    margin-top: 10px;
+    height: 120px;
+    background-color: #f0f0f0;
+    text-align: center;
+    line-height: 120px;
+    color: #888;
+    font-size: 14px;
+    font-style: italic;
+}
+
