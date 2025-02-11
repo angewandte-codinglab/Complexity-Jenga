@@ -22,14 +22,15 @@
     let softBodySolver;
     let physicsWorld;
     const rigidBodies = [];
-    const margin = 0.05;
+    const margin = 0.005;
     // let hinge;
     // let rope;
     let transformAux1;
 
-    let runPhysics = false;
+    let runPhysics = true;
 
-    let timeDiv = 1
+    const defaultTimeDiv = 4;
+    let timeDiv = defaultTimeDiv;
 
     //for view switch dropdown
     let currentView;
@@ -214,81 +215,109 @@
         const brickLength = 1.2; // Longest dimension of the brick
         const brickDepth = brickLength / 3; // Width of the brick, so that 3 blocks side by side equal the brick length
         const brickHeight = 0.3; // Shortest dimension, height of the brick
+
+        const heightOffset = -0.01;
         //access data
-        dataFile.then((data) => {
-            console.log(data)
+         dataFile.then((data) => {
+        console.log(data);
 
-            //set up scale for determin the number of bricks per layer
-            brick_level.domain(d3.extent(data, d => d.mean_betweeness_centrality)) // Thresholds divide the input
+        // Set up scale for brick level
+        brick_level.domain(d3.extent(data, d => d.mean_betweeness_centrality));
 
-            //sort data based on a value, it can sort by other ways
-            console.log(currentView.id)
-            data.sort((a, b) => a[currentView.id] - b[currentView.id])
+        // Sort data according to the current view
+        data.sort((a, b) => a[currentView.id] - b[currentView.id]);
 
-            const numLayers = data.length; // Define the number of layers for the tower based on number of countries
+        // Optionally limit layers (e.g., first 30 entries)
+        const limitLayers = true;
+        if (limitLayers) {
+            data = data.slice(0, 30);
+        }
 
-            data.forEach((d, j) => {
-                //get region color for this country
-                d.color = colorScale(d.macro_region);
-                //get numBricksPerLayer
-                d.bricks = brick_level(d.mean_betweeness_centrality)
-                const numBricksPerLayer = d.bricks
+        const showAllBricks = true; // For testing; if true, use 3 bricks per layer
+        // For each data entry, compute the brick parameters for that layer.
+        // Instead of immediately creating bricks, we store their parameters in a queue.
+        const brickQueue = [];
 
-                // Determine layer rotation and positioning
-                const isOddLayer = j % 2 !== 0;
-                const x0 = isOddLayer ? -(numBricksPerLayer * brickDepth / numBricksPerLayer) : 0;
-                const z0 = isOddLayer ? -(brickLength / numBricksPerLayer - brickDepth / numBricksPerLayer) : -(numBricksPerLayer * brickDepth / numBricksPerLayer);
+        data.forEach((d, j) => {
+            d.color = colorScale(d.macro_region);
+            const numBricksPerLayer = showAllBricks ? 3 : brick_level(d.mean_betweeness_centrality);
+            const isOddLayer = j % 2 !== 0;
 
-                pos.set(isOddLayer ? x0 : 0, brickHeight * (j + 0.5), isOddLayer ? 0 : z0); // Adjust the initial position for each layer
-                quat.set(0, isOddLayer ? 0.7071 : 0, 0, isOddLayer ? 0.7071 : 1); // Rotate 90 degrees for odd layers
+            // Compute the starting position and rotation for the layer:
+            let layerPos = new THREE.Vector3();
+            let layerQuat = new THREE.Quaternion();
+            if (isOddLayer) {
+                // For odd layers, the bricks will be aligned along the x‑axis.
+                // We calculate an initial x position (here x0 is chosen to center the layer)
+                const x0 = -(numBricksPerLayer * brickDepth) / 3;
+                layerPos.set(x0, brickHeight * (j + heightOffset), 0);
+                // Rotate 90° around the y-axis
+                layerQuat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+            } else {
+                // For even layers, the bricks will be aligned along the z‑axis.
+                const z0 = -(numBricksPerLayer * brickDepth) / 3;
+                layerPos.set(0, brickHeight * (j + heightOffset), z0);
+                layerQuat.set(0, 0, 0, 1);
+            }
 
-                //create bricks
-                //TODO: define the fixed brick layout for 4 groups
-                for (let i = 0; i < numBricksPerLayer; i++) {
-                    // if (Math.random() < .8) {
-                    const brick = createParalellepiped(
-                        brickLength, // Length of the brick
-                        brickHeight, // Height of the brick
-                        brickDepth, // Depth of the brick
-                        brickMass, // Mass of the brick
-                        pos, // Position of the brick
-                        quat, // Rotation
-                        createMaterial(d.color) // Material of the brick
-                    );
-
-                    brick.castShadow = true;
-                    brick.receiveShadow = true;
-                    brick.userData.index = j * numBricksPerLayer + i;
-                    brick.userData.region = d.macro_region;
-                    brick.userData.country = d.country;
-                    brick.userData.companies = d.number_of_companies;
-                    brick.userData.centrality = d.mean_betweeness_centrality;
-                    brick.userData.pagerank = d.mean_page_rank;
-                    brick.userData.color = d.color
-
-
-                    objects.push(brick);
-                    // }
-
-                    if (isOddLayer) {
-                        pos.x += brickDepth; // Move the position to place the next brick side by side along the x-axis
-                        // pos.z = pos.z + brickLength/3
-                    } else {
-                        pos.z += brickDepth; // Move the position to place the next brick side by side along the z-axis
-                        // pos.x = pos.x + brickLength/3
-                    }
-
-                    // pos.z = pos.z * 1.2
+            // For each brick in the layer, compute its exact position.
+            // We “clone” the starting position and then offset it for each brick.
+            for (let i = 0; i < numBricksPerLayer; i++) {
+                let brickPos = layerPos.clone();
+                if (isOddLayer) {
+                    brickPos.x += i * brickDepth;
+                } else {
+                    brickPos.z += i * brickDepth;
                 }
 
-            })
-            // for (let j = 0; j < numLayers; j++) {
-            //                 }
+                brickQueue.push({
+                    pos: brickPos,
+                    quat: layerQuat.clone(),
+                    data: d,
+                    brickIndex: j * numBricksPerLayer + i
+                });
+            }
+        });
 
-            return objects;
-        })
+        // --- Function to place the next brick in the queue ---
+        function placeNextBrick() {
+            if (brickQueue.length === 0) return; // All bricks placed
 
-    }
+            const brickInfo = brickQueue.shift();
+
+            // Create the brick with the stored parameters.
+            const brick = createParalellepiped(
+                brickLength,   // brick length
+                brickHeight,   // brick height
+                brickDepth,    // brick depth
+                0.5,           // brick mass (you can adjust this)
+                brickInfo.pos,
+                brickInfo.quat,
+                createMaterial(brickInfo.data.color)
+            );
+
+            brick.castShadow = true;
+            brick.receiveShadow = true;
+            brick.userData.index = brickInfo.brickIndex;
+            brick.userData.region = brickInfo.data.macro_region;
+            brick.userData.country = brickInfo.data.country;
+            brick.userData.companies = brickInfo.data.number_of_companies;
+            brick.userData.centrality = brickInfo.data.mean_betweeness_centrality;
+            brick.userData.pagerank = brickInfo.data.mean_page_rank;
+            brick.userData.color = brickInfo.data.color;
+
+            objects.push(brick);
+
+            // Schedule the placement of the next brick (adjust delay as desired)
+            setTimeout(placeNextBrick, 100);
+        }
+
+        // Start placing bricks one by one.
+        placeNextBrick();
+
+        return objects;
+    });
+}
 
 
     function createParalellepiped(sx, sy, sz, mass, pos, quat, material) {
@@ -319,6 +348,9 @@
 
         const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, physicsShape, localInertia);
         const body = new Ammo.btRigidBody(rbInfo);
+        // body.setSleepingThresholds(0.01, 0.01);
+        body.setFriction(1.0);
+        body.setRestitution(0.0);
 
         threeObject.userData.physicsBody = body;
 
@@ -379,7 +411,7 @@
             timeDiv = 10;
         });
         document.addEventListener('mouseup', event => {
-            timeDiv = 1;;
+            timeDiv = defaultTimeDiv;
         });
         // Add mouse move event listener
         document.addEventListener('mousemove', onMouseMove);
@@ -387,13 +419,13 @@
         // Function to handle the spacebar and enter press
         document.addEventListener('keydown', (event) => {
 
-            if (event.key === " " || event.keyCode === 32) {
+            if (event.key === " " || event.code === "Space") {
                 runPhysics = false;
                 removeAllBlocks(); // Clear previous blocks
                 createObjects(); // Create new blocks
-            } else if (event.keyCode === 13) {
+            } else if (event.code === "Enter") {
                 runPhysics = !runPhysics; // toggle physic simulation on/off
-            } else if (event.keyCode === 77) {
+            } else if (event.code === "KeyM") {
                 controls.touches.ONE = (controls.touches.ONE === THREE.TOUCH.PAN) ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN;
             }
 
@@ -434,7 +466,7 @@
         // hinge.enableAngularMotor( true, 1.5 * armMovement, 50 );
 
         // Step world
-        physicsWorld.stepSimulation(deltaTime / timeDiv, 10);
+        physicsWorld.stepSimulation(deltaTime / timeDiv, 100);
 
         // Update rigid bodies
         for (let i = 0, il = rigidBodies.length; i < il; i++) {
