@@ -5,6 +5,8 @@
     import { DragControls } from 'three/addons/DragControls.js';
     import { OrbitControls } from 'three/addons/OrbitControls.js';
 
+    const showAllBricks = true; // Toggle this variable to create all bricks per layer
+
     // Graphics variables
     let container, stats;
     let camera, controls, scene, renderer;
@@ -203,10 +205,10 @@
         // Ground
         pos.set(0, -0.5, 0);
         quat.set(0, 0, 0, 1);
-        const ground = createParalellepiped(40, 1, 40, 0, pos, quat, new THREE.MeshPhongMaterial({ color: 0xFFFFFF }));
+        const ground = createParalellepiped(80, 1, 80, 0, pos, quat, new THREE.MeshPhongMaterial({ color: 0xFFFFFF }));
         ground.castShadow = true;
         ground.receiveShadow = true;
-        textureLoader.load('textures/bg4.jpg', function(texture) {
+        textureLoader.load('textures/bg4.png', function(texture) {
 
             texture.colorSpace = THREE.SRGBColorSpace;
             texture.wrapS = THREE.RepeatWrapping;
@@ -218,11 +220,11 @@
         });
 
         // Jenga Block Dimensions
-        const brickMass = 50;
+        const brickMass = 5;
         const brickLength = 1.2; // Longest dimension of the brick
         const brickDepth = brickLength / 3; // Width of the brick, so that 3 blocks side by side equal the brick length
         const brickHeight = 0.3; // Shortest dimension, height of the brick
-        const heightOffset = -0.00001; // Offset to prevent bouncing
+        const heightOffset = -0.0008; // Offset to prevent bouncing
 
         //access data
         dataFile.then((data) => {
@@ -236,12 +238,10 @@
             data.sort((a, b) => a[currentView.id] - b[currentView.id])
 
             // Limit to only the first soso data entries if desired
-            const limitLayers = true; // Toggle this to false to use all data entries
+            const limitLayers = false; // Toggle this to false to use all data entries
             if (limitLayers) {
-                data = data.slice(0, 30);
+                data = data.slice(0, 20);
             }
-
-            const showAllBricks = true; // Toggle this variable to create all bricks per layer
 
             data.forEach((d, j) => {
                 //get region color for this country
