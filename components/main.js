@@ -13,6 +13,9 @@
     let objects = [];
     const clock = new THREE.Clock();
 
+    // Camera, controls
+    let orbitControls, dragControls;
+
     // Physics variables
     const gravityConstant = -9.8;
     let collisionConfiguration;
@@ -84,35 +87,38 @@
 
         createObjects();
 
-        controls = new DragControls(objects, camera, renderer.domElement);
-        controls.update();
-
-        controls.addEventListener('dragend', function(event) {
+        // Create DragControls for moving blocks.
+        dragControls = new DragControls(objects, camera, renderer.domElement);
+        dragControls.addEventListener('dragend', function(event) {
             const object = event.object;
-
             // Retrieve the physics body linked to the object
             const physicsBody = object.userData.physicsBody;
 
             if (physicsBody) {
                 const transform = new Ammo.btTransform();
                 transform.setIdentity();
-
                 // Set the new position
                 const position = object.position;
                 transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-
                 // Set the new orientation
                 const quaternion = object.quaternion;
                 transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
 
-                // Update the physics body's transform
+                // Update both the rigid body's world transform and its motion state
                 physicsBody.setWorldTransform(transform);
+                if (physicsBody.getMotionState()) {
+                    physicsBody.getMotionState().setWorldTransform(transform);
+                }
+                // Activate the body so it doesn't remain sleeping
+                physicsBody.activate();
 
                 // Optional: Clear the velocity to avoid unexpected movement after dragging
                 physicsBody.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
                 physicsBody.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
             }
         });
+        // Initially, enable drag controls
+        dragControls.enabled = false;
     }
 
     function initGraphics() {
@@ -132,9 +138,15 @@
         renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
-        controls = new OrbitControls(camera, renderer.domElement);
-        controls.target.set(0, 2, 0);
-        controls.update();
+        orbitControls = new OrbitControls(camera, renderer.domElement);
+        orbitControls.mouseButtons = {
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.PAN
+          };
+        orbitControls.target.set(0, 2, 0);
+        orbitControls.enabled = true;
+        orbitControls.update();
 
         textureLoader = new THREE.TextureLoader();
 
@@ -163,8 +175,6 @@
         // stats.domElement.style.top = '0px';
         // container.appendChild( stats.domElement );
 
-        //
-
         window.addEventListener('resize', onWindowResize);
 
     }
@@ -172,7 +182,6 @@
     function initPhysics() {
 
         // Physics configuration
-
         collisionConfiguration = new Ammo.btSoftBodyRigidBodyCollisionConfiguration();
         dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
         broadphase = new Ammo.btDbvtBroadphase();
@@ -281,14 +290,9 @@
                     } else {
                         pos.z += brickDepth; // Move the position to place the next brick side by side along the z-axis
                     }
-
-                    // pos.z = pos.z * 1.2
                 }
-
             })
-            // for (let j = 0; j < numLayers; j++) {
-            //                 }
-
+    
             return objects;
         })
 
@@ -323,7 +327,7 @@
 
         const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, physicsShape, localInertia);
         const body = new Ammo.btRigidBody(rbInfo);
-        // body.setSleepingThresholds(0.01, 0.01);
+        body.setSleepingThresholds(0.01, 0.01);
         body.setFriction(.5);
         body.setRestitution(.0);
 
@@ -332,9 +336,7 @@
         scene.add(threeObject);
 
         if (mass > 0) {
-
             rigidBodies.push(threeObject);
-
         }
 
         physicsWorld.addRigidBody(body);
@@ -342,23 +344,15 @@
     }
 
     function createRandomColor() {
-
         return Math.floor(Math.random() * (1 << 12));
-
     }
 
     function createMaterial(color) {
-
         // return new THREE.MeshPhongMaterial( { color: createRandomColor() } );
         return new THREE.MeshPhongMaterial({ color: color });
-
     }
 
     function initInput() {
-        // if (event.button == 0) { // left click for mouse
-        // } else if (event.button == 1) { // wheel click for mouse
-        // } else if (event.button == 2){   // right click for mouse
-        // }
         const viewOptions = [{
                 id: "number_of_companies",
                 name: 'Number of Companies',
@@ -399,10 +393,20 @@
                 runPhysics = !runPhysics; // toggle physic simulation on/off
             } else if (event.code === "KeyM") {
                 controls.touches.ONE = (controls.touches.ONE === THREE.TOUCH.PAN) ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN;
+            } else  if (event.metaKey || event.ctrlKey) { // Check for the command key (event.metaKey on macOS; on Windows you might check event.ctrlKey)
+                console.log ("Block moving enabled");
+                dragControls.enabled = true; // Disable dragging so that OrbitControls can work.
+                orbitControls.enabled = false; // Enable OrbitControls
             }
-
         });
 
+        document.addEventListener('keyup', (event) => {
+            if (!event.metaKey && !event.ctrlKey) {
+                console.log ("Orbit enabled");
+                orbitControls.enabled = true;
+                dragControls.enabled = false;
+            }
+        });
 
     }
 
