@@ -5,6 +5,8 @@
     import { DragControls } from 'three/addons/DragControls.js';
     import { OrbitControls } from 'three/addons/OrbitControls.js';
 
+    const showAllBricks = true; // Toggle this variable to create all bricks per layer
+
     // Graphics variables
     let container, stats;
     let camera, controls, scene, renderer;
@@ -12,6 +14,9 @@
     let enableSelection = false;
     let objects = [];
     const clock = new THREE.Clock();
+
+    // Camera, controls
+    let orbitControls, dragControls;
 
     // Physics variables
     const gravityConstant = -9.8;
@@ -23,13 +28,12 @@
     let physicsWorld;
     const rigidBodies = [];
     const margin = 0.05;
-    // let hinge;
-    // let rope;
     let transformAux1;
 
     let runPhysics = false;
 
-    let timeDiv = 1
+    const defaultTimeDiv = 2;
+    let timeDiv = defaultTimeDiv;
 
     //for view switch dropdown
     let currentView;
@@ -85,35 +89,38 @@
 
         createObjects();
 
-        controls = new DragControls(objects, camera, renderer.domElement);
-        controls.update();
-
-        controls.addEventListener('dragend', function(event) {
+        // Create DragControls for moving blocks.
+        dragControls = new DragControls(objects, camera, renderer.domElement);
+        dragControls.addEventListener('dragend', function(event) {
             const object = event.object;
-
             // Retrieve the physics body linked to the object
             const physicsBody = object.userData.physicsBody;
 
             if (physicsBody) {
                 const transform = new Ammo.btTransform();
                 transform.setIdentity();
-
                 // Set the new position
                 const position = object.position;
                 transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-
                 // Set the new orientation
                 const quaternion = object.quaternion;
                 transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
 
-                // Update the physics body's transform
+                // Update both the rigid body's world transform and its motion state
                 physicsBody.setWorldTransform(transform);
+                if (physicsBody.getMotionState()) {
+                    physicsBody.getMotionState().setWorldTransform(transform);
+                }
+                // Activate the body so it doesn't remain sleeping
+                physicsBody.activate();
 
                 // Optional: Clear the velocity to avoid unexpected movement after dragging
                 physicsBody.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
                 physicsBody.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
             }
         });
+        // Initially, enable drag controls
+        dragControls.enabled = false;
     }
 
     function initGraphics() {
@@ -133,9 +140,15 @@
         renderer.shadowMap.enabled = true;
         container.appendChild(renderer.domElement);
 
-        controls = new OrbitControls(camera, renderer.domElement);
-        controls.target.set(0, 2, 0);
-        controls.update();
+        orbitControls = new OrbitControls(camera, renderer.domElement);
+        orbitControls.mouseButtons = {
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.PAN
+          };
+        orbitControls.target.set(0, 2, 0);
+        orbitControls.enabled = true;
+        orbitControls.update();
 
         textureLoader = new THREE.TextureLoader();
 
@@ -164,8 +177,6 @@
         // stats.domElement.style.top = '0px';
         // container.appendChild( stats.domElement );
 
-        //
-
         window.addEventListener('resize', onWindowResize);
 
     }
@@ -173,7 +184,6 @@
     function initPhysics() {
 
         // Physics configuration
-
         collisionConfiguration = new Ammo.btSoftBodyRigidBodyCollisionConfiguration();
         dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
         broadphase = new Ammo.btDbvtBroadphase();
@@ -195,10 +205,10 @@
         // Ground
         pos.set(0, -0.5, 0);
         quat.set(0, 0, 0, 1);
-        const ground = createParalellepiped(40, 1, 40, 0, pos, quat, new THREE.MeshPhongMaterial({ color: 0xFFFFFF }));
+        const ground = createParalellepiped(80, 1, 80, 0, pos, quat, new THREE.MeshPhongMaterial({ color: 0xFFFFFF }));
         ground.castShadow = true;
         ground.receiveShadow = true;
-        textureLoader.load('textures/bg4.jpg', function(texture) {
+        textureLoader.load('textures/bg4.png', function(texture) {
 
             texture.colorSpace = THREE.SRGBColorSpace;
             texture.wrapS = THREE.RepeatWrapping;
@@ -210,10 +220,12 @@
         });
 
         // Jenga Block Dimensions
-        const brickMass = 0.5;
+        const brickMass = 5;
         const brickLength = 1.2; // Longest dimension of the brick
         const brickDepth = brickLength / 3; // Width of the brick, so that 3 blocks side by side equal the brick length
         const brickHeight = 0.3; // Shortest dimension, height of the brick
+        const heightOffset = -0.0008; // Offset to prevent bouncing
+
         //access data
         dataFile.then((data) => {
             console.log(data)
@@ -225,21 +237,24 @@
             console.log(currentView.id)
             data.sort((a, b) => b[currentView.id] - a[currentView.id])
 
-            const numLayers = data.length; // Define the number of layers for the tower based on number of countries
+            // Limit to only the first soso data entries if desired
+            const limitLayers = false; // Toggle this to false to use all data entries
+            if (limitLayers) {
+                data = data.slice(0, 20);
+            }
 
             data.forEach((d, j) => {
                 //get region color for this country
                 d.color = colorScale(d.macro_region);
-                //get numBricksPerLayer
-                d.bricks = brick_level(d.mean_betweeness_centrality)
-                const numBricksPerLayer = d.bricks
+                //either create all bricks per layer or based on data   
+                const numBricksPerLayer = showAllBricks ? 3 : brick_level(d.mean_betweeness_centrality);
 
                 // Determine layer rotation and positioning
                 const isOddLayer = j % 2 !== 0;
                 const x0 = isOddLayer ? -(numBricksPerLayer * brickDepth / numBricksPerLayer) : 0;
                 const z0 = isOddLayer ? -(brickLength / numBricksPerLayer - brickDepth / numBricksPerLayer) : -(numBricksPerLayer * brickDepth / numBricksPerLayer);
 
-                pos.set(isOddLayer ? x0 : 0, brickHeight * (j + 0.5), isOddLayer ? 0 : z0); // Adjust the initial position for each layer
+                pos.set(isOddLayer ? x0 : 0, (brickHeight+heightOffset)* (j + .5), isOddLayer ? 0 : z0); // Adjust the initial position for each layer
                 quat.set(0, isOddLayer ? 0.7071 : 0, 0, isOddLayer ? 0.7071 : 1); // Rotate 90 degrees for odd layers
 
                 //create bricks
@@ -272,19 +287,12 @@
 
                     if (isOddLayer) {
                         pos.x += brickDepth; // Move the position to place the next brick side by side along the x-axis
-                        // pos.z = pos.z + brickLength/3
                     } else {
                         pos.z += brickDepth; // Move the position to place the next brick side by side along the z-axis
-                        // pos.x = pos.x + brickLength/3
                     }
-
-                    // pos.z = pos.z * 1.2
                 }
-
             })
-            // for (let j = 0; j < numLayers; j++) {
-            //                 }
-
+    
             return objects;
         })
 
@@ -319,18 +327,16 @@
 
         const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, physicsShape, localInertia);
         const body = new Ammo.btRigidBody(rbInfo);
+        body.setSleepingThresholds(0.01, 0.01);
+        body.setFriction(.5);
+        body.setRestitution(.0);
 
         threeObject.userData.physicsBody = body;
 
         scene.add(threeObject);
 
         if (mass > 0) {
-
             rigidBodies.push(threeObject);
-
-            // Disable deactivation
-            body.setActivationState(4);
-
         }
 
         physicsWorld.addRigidBody(body);
@@ -338,23 +344,15 @@
     }
 
     function createRandomColor() {
-
         return Math.floor(Math.random() * (1 << 12));
-
     }
 
     function createMaterial(color) {
-
         // return new THREE.MeshPhongMaterial( { color: createRandomColor() } );
         return new THREE.MeshPhongMaterial({ color: color });
-
     }
 
     function initInput() {
-        // if (event.button == 0) { // left click for mouse
-        // } else if (event.button == 1) { // wheel click for mouse
-        // } else if (event.button == 2){   // right click for mouse
-        // }
         const viewOptions = [{
                 id: "number_of_companies",
                 name: 'Number of Companies',
@@ -379,7 +377,7 @@
             timeDiv = 10;
         });
         document.addEventListener('mouseup', event => {
-            timeDiv = 1;;
+            timeDiv = defaultTimeDiv;
         });
         // Add mouse move event listener
         document.addEventListener('mousemove', onMouseMove);
@@ -387,18 +385,28 @@
         // Function to handle the spacebar and enter press
         document.addEventListener('keydown', (event) => {
 
-            if (event.key === " " || event.keyCode === 32) {
+            if (event.key === " " || event.code === "Space") {
                 runPhysics = false;
                 removeAllBlocks(); // Clear previous blocks
                 createObjects(); // Create new blocks
-            } else if (event.keyCode === 13) {
+            } else if (event.code === "Enter") {
                 runPhysics = !runPhysics; // toggle physic simulation on/off
-            } else if (event.keyCode === 77) {
+            } else if (event.code === "KeyM") {
                 controls.touches.ONE = (controls.touches.ONE === THREE.TOUCH.PAN) ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN;
+            } else  if (event.metaKey || event.ctrlKey) { // Check for the command key (event.metaKey on macOS; on Windows you might check event.ctrlKey)
+                console.log ("Block moving enabled");
+                dragControls.enabled = true; // Disable dragging so that OrbitControls can work.
+                orbitControls.enabled = false; // Enable OrbitControls
             }
-
         });
 
+        document.addEventListener('keyup', (event) => {
+            if (!event.metaKey && !event.ctrlKey) {
+                console.log ("Orbit enabled");
+                orbitControls.enabled = true;
+                dragControls.enabled = false;
+            }
+        });
 
     }
 
@@ -434,7 +442,7 @@
         // hinge.enableAngularMotor( true, 1.5 * armMovement, 50 );
 
         // Step world
-        physicsWorld.stepSimulation(deltaTime / timeDiv, 10);
+        physicsWorld.stepSimulation(deltaTime / timeDiv, 100);
 
         // Update rigid bodies
         for (let i = 0, il = rigidBodies.length; i < il; i++) {
@@ -455,16 +463,6 @@
         }
 
     }
-
-    function removeAllBlocks() {
-        // Remove rigid bodies from the physics world
-        rigidBodies.forEach(obj => {
-            physicsWorld.removeRigidBody(obj.userData.physicsBody);
-            scene.remove(obj);
-        });
-        rigidBodies.length = 0; // Clear the array
-    }
-
 
     function onMouseMove(event) {
         // Calculate normalized mouse position
@@ -511,4 +509,13 @@
     function hideBlockInfo() {
         const hoverBox = document.getElementById('hoverBox');
         hoverBox.style.display = 'none';
+    }
+
+    function removeAllBlocks() {
+        // Remove rigid bodies from the physics world
+        rigidBodies.forEach(obj => {
+            physicsWorld.removeRigidBody(obj.userData.physicsBody);
+            scene.remove(obj);
+        });
+        rigidBodies.length = 0; // Clear the array
     }

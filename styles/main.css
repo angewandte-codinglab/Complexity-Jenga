@@ -34,7 +34,7 @@ button {
     display: flex;
     flex-direction: column;
     top: 0px;
-    width: 100%;
+    width: 25%;
     padding: 1em;
     box-sizing: border-box;
     z-index: 1;
