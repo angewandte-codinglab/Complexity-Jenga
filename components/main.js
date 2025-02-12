@@ -223,7 +223,7 @@
 
             //sort data based on a value, it can sort by other ways
             console.log(currentView.id)
-            data.sort((a, b) => a[currentView.id] - b[currentView.id])
+            data.sort((a, b) => b[currentView.id] - a[currentView.id])
 
             const numLayers = data.length; // Define the number of layers for the tower based on number of countries
 
