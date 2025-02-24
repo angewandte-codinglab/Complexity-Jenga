@@ -20,6 +20,7 @@
 
     // Physics variables
     const gravityConstant = -9.8;
+    // const gravityConstant = -6; //use smaller gavity?
     let collisionConfiguration;
     let dispatcher;
     let broadphase;
@@ -27,7 +28,8 @@
     let softBodySolver;
     let physicsWorld;
     const rigidBodies = [];
-    const margin = 0.05;
+    // const margin = 0.05;
+    const margin = 0.001;
     let transformAux1;
 
     let runPhysics = false;
@@ -193,6 +195,9 @@
         physicsWorld.setGravity(new Ammo.btVector3(0, gravityConstant, 0));
         physicsWorld.getWorldInfo().set_m_gravity(new Ammo.btVector3(0, gravityConstant, 0));
 
+        const solverInfo = physicsWorld.getSolverInfo();
+        solverInfo.set_m_numIterations(60); // Increase solver iterations for stability
+
         transformAux1 = new Ammo.btTransform();
 
     }
@@ -220,7 +225,8 @@
         });
 
         // Jenga Block Dimensions
-        const brickMass = 5;
+        // const brickMass = 5;
+        const brickMass = 100;
         const brickLength = 1.2; // Longest dimension of the brick
         const brickDepth = brickLength / 3; // Width of the brick, so that 3 blocks side by side equal the brick length
         const brickHeight = 0.3; // Shortest dimension, height of the brick
@@ -246,7 +252,7 @@
             data.forEach((d, j) => {
                 //get region color for this country
                 d.color = colorScale(d.macro_region);
-                
+
                 const numBricksPerLayer = 3; //alwasy show three bricks for layout.
                 //either create all bricks per layer or based on data   
                 const brickLayoutPerLayer = showAllBricks ? 4 : brick_layout(d.mean_betweeness_centrality);
@@ -342,8 +348,16 @@
         const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, physicsShape, localInertia);
         const body = new Ammo.btRigidBody(rbInfo);
         body.setSleepingThresholds(0.01, 0.01);
-        body.setFriction(.5);
+        // body.setFriction(.5);
+        body.setFriction(1);
         body.setRestitution(.0);
+        body.setDamping(0.5, 1); // Adjust values between 0 (no damping) and 1 (max damping):
+        // linear damping, which will gradually slow down the object's movement along its path.
+        // angular damping, which will gradually reduce the object's spinning motion.
+        body.setCcdMotionThreshold(0.1);
+        body.setCcdSweptSphereRadius(0.05);
+
+
 
         threeObject.userData.physicsBody = body;
 
