@@ -47,6 +47,8 @@ button {
     flex-direction: column;
     margin-top: 1em;
     font-size: 0.9em;
+    background: #e6e6e6;
+    padding: 0.5em;
 }
 a,
 button,

@@ -5,7 +5,7 @@
     import { DragControls } from 'three/addons/DragControls.js';
     import { OrbitControls } from 'three/addons/OrbitControls.js';
 
-    const showAllBricks = true; // Toggle this variable to create all bricks per layer
+    const showAllBricks = false; // Toggle this variable to create all bricks per layer
 
     // Graphics variables
     let container, stats;
@@ -60,7 +60,7 @@
         .range(['#ff0000', '#ffff00', '#00ffff', '#0000ff', '#ff00ff']) //six colors for six macro regions
         .domain(['Oceania', 'Europe', 'Americas', 'Asia', 'Africa'])
 
-    const brick_level = d3.scaleQuantize()
+    const brick_layout = d3.scaleQuantize()
         .range([1, 2, 3, 4]); // Output groups
 
     //get data
@@ -145,7 +145,7 @@
             LEFT: THREE.MOUSE.ROTATE,
             MIDDLE: THREE.MOUSE.DOLLY,
             RIGHT: THREE.MOUSE.PAN
-          };
+        };
         orbitControls.target.set(0, 2, 0);
         orbitControls.enabled = true;
         orbitControls.update();
@@ -231,7 +231,7 @@
             console.log(data)
 
             //set up scale for determin the number of bricks per layer
-            brick_level.domain(d3.extent(data, d => d.mean_betweeness_centrality)) // Thresholds divide the input
+            brick_layout.domain(d3.extent(data, d => d.mean_betweeness_centrality)) // Thresholds divide the input
 
             //sort data based on a value, it can sort by other ways
             console.log(currentView.id)
@@ -246,53 +246,67 @@
             data.forEach((d, j) => {
                 //get region color for this country
                 d.color = colorScale(d.macro_region);
+                
+                const numBricksPerLayer = 3; //alwasy show three bricks for layout.
                 //either create all bricks per layer or based on data   
-                const numBricksPerLayer = showAllBricks ? 3 : brick_level(d.mean_betweeness_centrality);
+                const brickLayoutPerLayer = showAllBricks ? 4 : brick_layout(d.mean_betweeness_centrality);
+                // console.log(brickLayoutPerLayer)
 
                 // Determine layer rotation and positioning
                 const isOddLayer = j % 2 !== 0;
                 const x0 = isOddLayer ? -(numBricksPerLayer * brickDepth / numBricksPerLayer) : 0;
-                const z0 = isOddLayer ? -(brickLength / numBricksPerLayer - brickDepth / numBricksPerLayer) : -(numBricksPerLayer * brickDepth / numBricksPerLayer);
+                // const z0 = isOddLayer ? -(brickLength / numBricksPerLayer - brickDepth / numBricksPerLayer) : -(numBricksPerLayer * brickDepth / numBricksPerLayer);
+                const z0 = isOddLayer ? 0 : -(numBricksPerLayer * brickDepth / numBricksPerLayer);
 
-                pos.set(isOddLayer ? x0 : 0, (brickHeight+heightOffset)* (j + .5), isOddLayer ? 0 : z0); // Adjust the initial position for each layer
+                pos.set(x0, (brickHeight + heightOffset) * (j + .5), z0);
+                // pos.set(isOddLayer ? x0 : 0, (brickHeight+heightOffset)* (j + .5), isOddLayer ? 0 : z0); // Adjust the initial position for each layer
                 quat.set(0, isOddLayer ? 0.7071 : 0, 0, isOddLayer ? 0.7071 : 1); // Rotate 90 degrees for odd layers
 
                 //create bricks
                 //TODO: define the fixed brick layout for 4 groups
                 for (let i = 0; i < numBricksPerLayer; i++) {
-                    // if (Math.random() < .8) {
-                    const brick = createParalellepiped(
-                        brickLength, // Length of the brick
-                        brickHeight, // Height of the brick
-                        brickDepth, // Depth of the brick
-                        brickMass, // Mass of the brick
-                        pos, // Position of the brick
-                        quat, // Rotation
-                        createMaterial(d.color) // Material of the brick
-                    );
+                    //skip bricks based on brickLayoutPerLayer: 1,2,3,4.
+                    //4: keep all three bricks -- 1 1 1
+                    //3: skip the middle one -----1 0 1
+                    //2: skip the last one -------1 1 0
+                    //1: only keep the middle one-0 1 0
+                    if ((i === 0 && brickLayoutPerLayer > 1) || (i === 1 && brickLayoutPerLayer !== 3) || i === 2 && brickLayoutPerLayer > 2) {
 
-                    brick.castShadow = true;
-                    brick.receiveShadow = true;
-                    brick.userData.index = j * numBricksPerLayer + i;
-                    brick.userData.region = d.macro_region;
-                    brick.userData.country = d.country;
-                    brick.userData.companies = d.number_of_companies;
-                    brick.userData.centrality = d.mean_betweeness_centrality;
-                    brick.userData.pagerank = d.mean_page_rank;
-                    brick.userData.color = d.color
+                        const brick = createParalellepiped(
+                            brickLength, // Length of the brick
+                            brickHeight, // Height of the brick
+                            brickDepth, // Depth of the brick
+                            brickMass, // Mass of the brick
+                            pos, // Position of the brick
+                            quat, // Rotation
+                            createMaterial(d.color) // Material of the brick
+                        );
+
+                        brick.castShadow = true;
+                        brick.receiveShadow = true;
+                        brick.userData.index = j * numBricksPerLayer + i;
+                        brick.userData.region = d.macro_region;
+                        brick.userData.country = d.country;
+                        brick.userData.companies = d.number_of_companies;
+                        brick.userData.centrality = d.mean_betweeness_centrality;
+                        brick.userData.pagerank = d.mean_page_rank;
+                        brick.userData.color = d.color
+                        brick.userData.brickLayoutPerLayer = brickLayoutPerLayer //for debugging
 
 
-                    objects.push(brick);
-                    // }
+                        objects.push(brick);
+                    }
 
                     if (isOddLayer) {
-                        pos.x += brickDepth; // Move the position to place the next brick side by side along the x-axis
+                        pos.x = i * brickDepth;
+                        // pos.x += brickDepth; // Move the position to place the next brick side by side along the x-axis
                     } else {
-                        pos.z += brickDepth; // Move the position to place the next brick side by side along the z-axis
+                        pos.z = i * brickDepth;
+                        // pos.z += brickDepth; // Move the position to place the next brick side by side along the z-axis
                     }
                 }
             })
-    
+
             return objects;
         })
 
@@ -393,8 +407,8 @@
                 runPhysics = !runPhysics; // toggle physic simulation on/off
             } else if (event.code === "KeyM") {
                 controls.touches.ONE = (controls.touches.ONE === THREE.TOUCH.PAN) ? THREE.TOUCH.ROTATE : THREE.TOUCH.PAN;
-            } else  if (event.metaKey || event.ctrlKey) { // Check for the command key (event.metaKey on macOS; on Windows you might check event.ctrlKey)
-                console.log ("Block moving enabled");
+            } else if (event.metaKey || event.ctrlKey) { // Check for the command key (event.metaKey on macOS; on Windows you might check event.ctrlKey)
+                console.log("Block moving enabled");
                 dragControls.enabled = true; // Disable dragging so that OrbitControls can work.
                 orbitControls.enabled = false; // Enable OrbitControls
             }
@@ -402,7 +416,7 @@
 
         document.addEventListener('keyup', (event) => {
             if (!event.metaKey && !event.ctrlKey) {
-                console.log ("Orbit enabled");
+                console.log("Orbit enabled");
                 orbitControls.enabled = true;
                 dragControls.enabled = false;
             }
@@ -499,7 +513,7 @@
             This country contains ${block.userData.companies} companies, connected to the global network with an average betweenness centrality of ${block.userData.centrality.toFixed(4)} and based on an average PageRank of ${d3.format(".4f")(block.userData.pagerank)}. Further details are displayed below.
         </div>
         <div id="infographicBox">
-            Add infographics here
+            Add infographics here (bricklayout ${block.userData.brickLayoutPerLayer})
         </div>
     `;
         hoverBox.style.top = `${event.clientY}px`;
