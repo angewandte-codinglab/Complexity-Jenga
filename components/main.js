@@ -29,20 +29,26 @@ let orbitControls, dragControls;
 let composer;
 let bloomParams = {
     strength: 0.25,   // Bloom intensity
-    radius: .5,     // Bloom radius
-    threshold: 0.1   // Minimum brightness to apply bloom
+    radius: .2,     // Bloom radius
+    threshold: 0.01   // Minimum brightness to apply bloom
 };
 
 // Add depth-of-field parameters
 let dofParams = {
-    focus: 20.0,      // Focus distance
-    aperture: 0.03,  // Aperture (smaller = more blur)
-    maxblur: 0.01     // Maximum blur amount
+    focus: 18.0,      // Focus distance
+    aperture: 0.0005,  // Aperture (smaller = more blur)
+    maxblur: 0.005     // Maximum blur amount
 };
 
 // Add these variables to hold our GUI and effect references
 let gui;
 let bloomPass, bokehPass;
+
+// Add these variables for auto-focus
+let autoFocus = true;
+let focusUpdateFrequency = 10; // Update focus every N frames
+let frameCounter = 0;
+let towerCenter = new THREE.Vector3(0, 5, 0); // Approximate center of the tower
 
 // Physics variables
 const gravityConstant = -9.8;
@@ -271,6 +277,9 @@ function setupGUI() {
     });
     dofFolder.add(dofParams, 'maxblur', 0, 0.05, 0.001).name('Max Blur').onChange(value => {
         bokehPass.uniforms['maxblur'].value = value;
+    });
+    dofFolder.add({ autoFocus: autoFocus }, 'autoFocus').name('Auto Focus').onChange(value => {
+        autoFocus = value;
     });
     dofFolder.open();
     
@@ -554,15 +563,20 @@ function animate() {
 
 }
 
+// Modify your render function to include auto-focus
 function render() {
-
     const deltaTime = clock.getDelta();
 
     if (runPhysics) updatePhysics(deltaTime);
-
+    
+    // Auto-focus the camera on the tower
+    if (autoFocus && frameCounter % focusUpdateFrequency === 0) {
+        updateFocusOnTower();
+    }
+    frameCounter++;
+    
     // Use composer.render() instead of renderer.render()
     composer.render();
-
 }
 
 function updatePhysics(deltaTime) {
@@ -588,9 +602,54 @@ function updatePhysics(deltaTime) {
             objThree.quaternion.set(q.x(), q.y(), q.z(), q.w());
 
         }
-
     }
+}
 
+// Add this function to calculate and update the focus
+function updateFocusOnTower() {
+    if (rigidBodies.length === 0) return;
+    
+    // Option 1: Use center of tower (computationally cheap)
+    calculateTowerCenter();
+    const distanceToTower = camera.position.distanceTo(towerCenter);
+    
+    // Option 2: Use raycasting to find exact distance (more accurate but more expensive)
+    // Cast ray from camera toward tower center
+    raycaster.set(camera.position, 
+        new THREE.Vector3().subVectors(towerCenter, camera.position).normalize());
+    const intersects = raycaster.intersectObjects(rigidBodies);
+    
+    let focusDistance = distanceToTower;
+    if (intersects.length > 0) {
+        // Use the first intersection distance
+        focusDistance = intersects[0].distance;
+    }
+    
+    // Smoothly transition focus
+    const currentFocus = bokehPass.uniforms['focus'].value;
+    bokehPass.uniforms['focus'].value = THREE.MathUtils.lerp(
+        currentFocus, 
+        focusDistance, 
+        0.1 // Adjust speed of focus change (0-1)
+    );
+    
+    // Update the GUI display if it exists
+    if (gui) {
+        dofParams.focus = bokehPass.uniforms['focus'].value;
+    }
+}
+
+// Calculate the approximate center of the Jenga tower
+function calculateTowerCenter() {
+    if (rigidBodies.length === 0) return;
+    
+    // Find the average position of all bricks
+    const sum = new THREE.Vector3();
+    rigidBodies.forEach(body => {
+        sum.add(body.position);
+    });
+    
+    towerCenter.copy(sum.divideScalar(rigidBodies.length));
 }
 
 function onMouseMove(event) {
