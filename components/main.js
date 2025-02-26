@@ -1,4 +1,4 @@
-    import * as THREE from 'three';
+import * as THREE from 'three';
 
     import Stats from 'three/addons/stats.module.js';
 
@@ -140,6 +140,8 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setAnimationLoop(animate);
         renderer.shadowMap.enabled = true;
+        //  helps avoid over-bright or washed-out areas, enhancing realism with virtually no performance cost.
+        renderer.toneMapping = THREE.ACESFilmicToneMapping
         container.appendChild(renderer.domElement);
 
         orbitControls = new OrbitControls(camera, renderer.domElement);
@@ -154,8 +156,14 @@
 
         textureLoader = new THREE.TextureLoader();
 
-        const ambientLight = new THREE.AmbientLight(0xbbbbbb);
+        // Existing Ambient Light for soft illumination
+        const ambientLight = new THREE.AmbientLight(0xbbbbbb, 0.5);
         scene.add(ambientLight);
+
+        // New Hemisphere Light for subtle sky/ground lighting
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+        hemiLight.position.set(0, 200, 0);
+        scene.add(hemiLight);
 
         const light = new THREE.DirectionalLight(0xffffff, 3);
         light.position.set(-10, 10, 5);
@@ -173,11 +181,6 @@
         light.shadow.mapSize.y = 1024;
 
         scene.add(light);
-
-        // stats = new Stats();
-        // stats.domElement.style.position = 'absolute';
-        // stats.domElement.style.top = '0px';
-        // container.appendChild( stats.domElement );
 
         window.addEventListener('resize', onWindowResize);
 
