@@ -9,6 +9,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+// Add at the top of your imports
+import { GUI } from 'three/addons/lil-gui.module.min.js';
 
 const showAllBricks = false; // Toggle this variable to create all bricks per layer
 
@@ -37,6 +39,10 @@ let dofParams = {
     aperture: 0.03,  // Aperture (smaller = more blur)
     maxblur: 0.01     // Maximum blur amount
 };
+
+// Add these variables to hold our GUI and effect references
+let gui;
+let bloomPass, bokehPass;
 
 // Physics variables
 const gravityConstant = -9.8;
@@ -168,7 +174,7 @@ function initGraphics() {
     const renderPass = new RenderPass(scene, camera);
 
     // Create the bloom pass
-    const bloomPass = new UnrealBloomPass(
+    bloomPass = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
         bloomParams.strength,
         bloomParams.radius,
@@ -181,7 +187,7 @@ function initGraphics() {
     composer.addPass(bloomPass);
 
     // Setup depth-of-field effect
-    const bokehPass = new BokehPass(scene, camera, {
+    bokehPass = new BokehPass(scene, camera, {
         focus: dofParams.focus,
         aperture: dofParams.aperture,
         maxblur: dofParams.maxblur,
@@ -232,6 +238,46 @@ function initGraphics() {
 
     window.addEventListener('resize', onWindowResize);
 
+    // Add GUI controls after setting up the renderer and effects
+    setupGUI();
+}
+
+// Add this function to create and configure the GUI
+function setupGUI() {
+    // Create GUI instance
+    gui = new GUI({ width: 300 });
+    gui.title('Visual Effects');
+    
+    // Create Bloom folder
+    const bloomFolder = gui.addFolder('Bloom Effect');
+    bloomFolder.add(bloomParams, 'strength', 0, 3, 0.01).name('Strength').onChange(value => {
+        bloomPass.strength = value;
+    });
+    bloomFolder.add(bloomParams, 'radius', 0, 1, 0.01).name('Radius').onChange(value => {
+        bloomPass.radius = value;
+    });
+    bloomFolder.add(bloomParams, 'threshold', 0, 1, 0.01).name('Threshold').onChange(value => {
+        bloomPass.threshold = value;
+    });
+    bloomFolder.open();
+    
+    // Create DOF folder
+    const dofFolder = gui.addFolder('Depth of Field');
+    dofFolder.add(dofParams, 'focus', 1, 50, 0.1).name('Focus Distance').onChange(value => {
+        bokehPass.uniforms['focus'].value = value;
+    });
+    dofFolder.add(dofParams, 'aperture', 0.0001, 0.05, 0.0001).name('Aperture').onChange(value => {
+        bokehPass.uniforms['aperture'].value = value;
+    });
+    dofFolder.add(dofParams, 'maxblur', 0, 0.05, 0.001).name('Max Blur').onChange(value => {
+        bokehPass.uniforms['maxblur'].value = value;
+    });
+    dofFolder.open();
+    
+    // Position GUI in top right
+    gui.domElement.style.position = 'absolute';
+    gui.domElement.style.top = '10px';
+    gui.domElement.style.right = '10px';
 }
 
 function initPhysics() {
