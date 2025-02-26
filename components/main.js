@@ -28,7 +28,7 @@ let orbitControls, dragControls;
 // Add these variables for post-processing
 let composer;
 let bloomParams = {
-    strength: 0.25,   // Bloom intensity
+    strength: 0.2,   // Bloom intensity
     radius: .2,     // Bloom radius
     threshold: 0.01   // Minimum brightness to apply bloom
 };
@@ -49,6 +49,12 @@ let autoFocus = true;
 let focusUpdateFrequency = 10; // Update focus every N frames
 let frameCounter = 0;
 let towerCenter = new THREE.Vector3(0, 5, 0); // Approximate center of the tower
+
+// Add this variable to the top section with other effect parameters
+let bloomEnabled = true;  // Toggle for bloom effect
+
+// Add this variable to the top section with other effect parameters
+let dofEnabled = true;  // Toggle for depth of field effect
 
 // Physics variables
 const gravityConstant = -9.8;
@@ -173,7 +179,7 @@ function initGraphics() {
     renderer.setAnimationLoop(animate);
     renderer.shadowMap.enabled = true;
     //  helps avoid over-bright or washed-out areas, enhancing realism with virtually no performance cost.
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMapping = THREE.NeutralToneMapping;
     container.appendChild(renderer.domElement);
 
     // Setup post-processing effects
@@ -203,6 +209,8 @@ function initGraphics() {
 
     // Add the bokeh pass after the bloom pass
     composer.addPass(bokehPass);
+
+    bokehPass.enabled = dofEnabled;
 
     orbitControls = new OrbitControls(camera, renderer.domElement);
     orbitControls.mouseButtons = {
@@ -256,6 +264,13 @@ function setupGUI() {
     
     // Create Bloom folder
     const bloomFolder = gui.addFolder('Bloom Effect');
+    
+    // Add bloom enable/disable checkbox
+    bloomFolder.add({ bloomEnabled: bloomEnabled }, 'bloomEnabled').name('Enable Bloom').onChange(value => {
+        bloomEnabled = value;
+        bloomPass.enabled = value;
+    });
+    
     bloomFolder.add(bloomParams, 'strength', 0, 3, 0.01).name('Strength').onChange(value => {
         bloomPass.strength = value;
     });
@@ -269,9 +284,15 @@ function setupGUI() {
     
     // Create DOF folder
     const dofFolder = gui.addFolder('Depth of Field');
-    dofFolder.add(dofParams, 'focus', 1, 50, 0.1).name('Focus Distance').onChange(value => {
+    
+    // Store reference to the focus controller so we can update it
+    const focusController = dofFolder.add(dofParams, 'focus', 1, 50, 0.1).name('Focus Distance').onChange(value => {
         bokehPass.uniforms['focus'].value = value;
     });
+    
+    // Add this line to store the controller reference as a property
+    dofParams.controller = focusController;
+    
     dofFolder.add(dofParams, 'aperture', 0.0001, 0.05, 0.0001).name('Aperture').onChange(value => {
         bokehPass.uniforms['aperture'].value = value;
     });
@@ -280,6 +301,10 @@ function setupGUI() {
     });
     dofFolder.add({ autoFocus: autoFocus }, 'autoFocus').name('Auto Focus').onChange(value => {
         autoFocus = value;
+    });
+    dofFolder.add({ dofEnabled: dofEnabled }, 'dofEnabled').name('Enable Depth of Field').onChange(value => {
+        dofEnabled = value;
+        bokehPass.enabled = value;
     });
     dofFolder.open();
     
@@ -483,7 +508,7 @@ function createRandomColor() {
 
 function createMaterial(color) {
     // return new THREE.MeshPhongMaterial( { color: createRandomColor() } );
-    return new THREE.MeshPhongMaterial({ color: color });
+    return new THREE.MeshPhongMaterial({ color: color, shininess:50, specular: 0xffffff });
 }
 
 function initInput() {
@@ -633,9 +658,12 @@ function updateFocusOnTower() {
         0.1 // Adjust speed of focus change (0-1)
     );
     
-    // Update the GUI display if it exists
-    if (gui) {
-        dofParams.focus = bokehPass.uniforms['focus'].value;
+    // Update the value in our parameters object
+    dofParams.focus = bokehPass.uniforms['focus'].value;
+    
+    // Update the GUI slider to reflect the current value
+    if (dofParams.controller) {
+        dofParams.controller.setValue(dofParams.focus);
     }
 }
 
