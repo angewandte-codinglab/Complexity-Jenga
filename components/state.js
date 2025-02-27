@@ -6,7 +6,7 @@ export const state = {
     // Constants
     gravityConstant: -9.8,
     margin: 0.001,
-    defaultTimeDiv: 2,
+    defaultTimeDiv: 1,
     showAllBricks: false,
     
     // Graphics

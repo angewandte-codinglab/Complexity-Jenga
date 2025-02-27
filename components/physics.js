@@ -61,9 +61,9 @@ function createGround(pos, quat) {
 function createJengaTower() {
     // Jenga Block Dimensions
     const brickMass = 100;
-    const brickLength = 1.2; 
+    const brickLength = 1.2*4; 
     const brickDepth = brickLength / 3;
-    const brickHeight = 0.3;
+    const brickHeight = brickLength / 4;
     const heightOffset = -0.0008;
     
     // Load data and create blocks
@@ -179,9 +179,10 @@ export function createRigidBody(threeObject, physicsShape, mass, pos, quat) {
     const body = new Ammo.btRigidBody(rbInfo);
     
     body.setSleepingThresholds(0.01, 0.01);
-    body.setFriction(1);
-    body.setRestitution(0);
-    body.setDamping(0.5, 1);
+    body.setFriction(.5);
+    body.setRestitution(0.2);
+    // body.setDamping(0.5, 1); // Linear and angular damping, more stability but less realistic behaviour
+    body.setDamping(0.2, 0.4);
     body.setCcdMotionThreshold(0.1);
     body.setCcdSweptSphereRadius(0.05);
     

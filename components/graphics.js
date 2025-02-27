@@ -8,7 +8,7 @@ export function initGraphics() {
 
     // Set up camera
     state.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.2, 2000);
-    state.camera.position.set(-12, 24, -12);
+    state.camera.position.set(-12*4, 48, -12*4);
 
     // Set up scene
     state.scene = new THREE.Scene();

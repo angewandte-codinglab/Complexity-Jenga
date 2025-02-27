@@ -14,7 +14,7 @@ export function initInterface() {
 function setupInputHandlers() {
     // Mouse events
     document.addEventListener('mousedown', () => {
-        state.timeDiv = 10;
+        state.timeDiv = 4;
     });
     
     document.addEventListener('mouseup', () => {
@@ -37,6 +37,7 @@ function setupInputHandlers() {
                 : THREE.TOUCH.PAN;
         } else if (event.metaKey || event.ctrlKey) {
             console.log("Block moving enabled");
+            state.runPhysics = false;
             state.dragControls.enabled = true;
             state.orbitControls.enabled = false;
         }
@@ -45,6 +46,7 @@ function setupInputHandlers() {
     document.addEventListener('keyup', (event) => {
         if (!event.metaKey && !event.ctrlKey) {
             console.log("Orbit enabled");
+            state.runPhysics = !state.runPhysics;
             state.orbitControls.enabled = true;
             state.dragControls.enabled = false;
         }
