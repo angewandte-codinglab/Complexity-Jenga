@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { DragControls } from 'three/addons/DragControls.js';
-import * as d3 from 'd3';
+// import * as d3 from 'd3';
 import { state } from './state.js';
 import { removeAllBlocks, createObjects } from './physics.js';
 import { createDropdown } from './data.js';

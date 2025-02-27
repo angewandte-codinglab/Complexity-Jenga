@@ -1,4 +1,4 @@
-import * as d3 from 'd3';
+// import * as d3 from 'd3';
 
 export function loadData() {
     return d3.csv('./data/results_semicon.csv', parse);
