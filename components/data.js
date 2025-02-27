@@ -12,53 +12,53 @@ function parse(d) {
     return d;
 }
 
-export function createDropdown(container, id, options, selected, callback) {
-    // Clear any existing dropdown
-    container.selectAll(`#${id}`).remove();
+// export function createDropdown(container, id, options, selected, callback) {
+//     // Clear any existing dropdown
+//     container.selectAll(`#${id}`).remove();
     
-    // Create dropdown container
-    const dropdown = container
-        .append('div')
-        .attr('id', id)
-        .attr('class', 'dropdown');
+//     // Create dropdown container
+//     const dropdown = container
+//         .append('div')
+//         .attr('id', id)
+//         .attr('class', 'dropdown');
     
-    // Create selected display
-    const selectedDisplay = dropdown
-        .append('div')
-        .attr('class', 'selected-option')
-        .text(selected.name);
+//     // Create selected display
+//     const selectedDisplay = dropdown
+//         .append('div')
+//         .attr('class', 'selected-option')
+//         .text(selected.name);
     
-    // Create dropdown options
-    const dropdownOptions = dropdown
-        .append('div')
-        .attr('class', 'dropdown-options')
-        .style('display', 'none');
+//     // Create dropdown options
+//     const dropdownOptions = dropdown
+//         .append('div')
+//         .attr('class', 'dropdown-options')
+//         .style('display', 'none');
     
-    // Add options
-    options.forEach(option => {
-        dropdownOptions
-            .append('div')
-            .attr('class', 'dropdown-option')
-            .text(option.name)
-            .on('click', function() {
-                selectedDisplay.text(option.name);
-                dropdownOptions.style('display', 'none');
-                callback(option);
-            });
-    });
+//     // Add options
+//     options.forEach(option => {
+//         dropdownOptions
+//             .append('div')
+//             .attr('class', 'dropdown-option')
+//             .text(option.name)
+//             .on('click', function() {
+//                 selectedDisplay.text(option.name);
+//                 dropdownOptions.style('display', 'none');
+//                 callback(option);
+//             });
+//     });
     
-    // Toggle dropdown on click
-    selectedDisplay.on('click', function() {
-        const isVisible = dropdownOptions.style('display') !== 'none';
-        dropdownOptions.style('display', isVisible ? 'none' : 'block');
-    });
+//     // Toggle dropdown on click
+//     selectedDisplay.on('click', function() {
+//         const isVisible = dropdownOptions.style('display') !== 'none';
+//         dropdownOptions.style('display', isVisible ? 'none' : 'block');
+//     });
     
-    // Close dropdown when clicking elsewhere
-    document.addEventListener('click', function(event) {
-        if (!dropdown.node().contains(event.target)) {
-            dropdownOptions.style('display', 'none');
-        }
-    });
+//     // Close dropdown when clicking elsewhere
+//     document.addEventListener('click', function(event) {
+//         if (!dropdown.node().contains(event.target)) {
+//             dropdownOptions.style('display', 'none');
+//         }
+//     });
     
-    return dropdown;
-}
+//     return dropdown;
+// }
