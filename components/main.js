@@ -20,6 +20,7 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 // Add this import at the top
 import { Reflector } from 'three/addons/objects/Reflector.js';
 
+const showAllBricks = false; // Toggle this variable to create all bricks per layer
 
 // Graphics variables
 let container, stats;
@@ -43,25 +44,25 @@ let bloomParams = {
 // Add depth-of-field parameters
 let dofParams = {
     focus: 18.0,      // Focus distance
-    aperture: 0.0005,  // Aperture (smaller = more blur)
-    maxblur: 0.005     // Maximum blur amount
+    aperture: 0.0001,  // Aperture (smaller = more blur)
+    maxblur: 0.002     // Maximum blur amount
 };
 
 // Add these variables to hold our GUI and effect references
 let gui;
 let bloomPass, bokehPass, toneMapPass;
 
-// Add these variables for auto-focus
-let autoFocus = false;
-let focusUpdateFrequency = 10; // Update focus every N frames
-let frameCounter = 0;
-let towerCenter = new THREE.Vector3(0, 5, 0); // Approximate center of the tower
-
 // Add this variable to the top section with other effect parameters
 let bloomEnabled = true;  // Toggle for bloom effect
 
 // Add this variable to the top section with other effect parameters
-let dofEnabled = false;  // Toggle for depth of field effect
+let dofEnabled = true;  // Toggle for depth of field effect
+
+// Add these variables for auto-focus
+let autoFocus = true;
+let focusUpdateFrequency = 10; // Update focus every N frames
+let frameCounter = 0;
+let towerCenter = new THREE.Vector3(0, 5, 0); // Approximate center of the tower
 
 // Add these variables to store the ground material and available HDR files
 let groundMaterial;
@@ -954,118 +955,124 @@ function updateFocusOnTower() {
         rigidBodies.length = 0; // Clear the array
     }
     
-    // Updated ground material GUI
+    // Setup ground material GUI
     function setupGroundMaterialGUI() {
-        if (!gui || !gui.groundFolder) return;
+        if (!gui) return;
         
-        // Clear existing controllers
-        while(gui.groundFolder.__controllers && gui.groundFolder.__controllers.length > 0) {
-            gui.groundFolder.__controllers[0].remove();
+        // Clean approach: remove the entire folder and recreate it
+        if (gui.groundFolder) {
+            gui.groundFolder.destroy();
         }
+        
+        // Create a new folder
+        gui.groundFolder = gui.addFolder('Ground Material');
         
         // Add visibility toggle
         gui.groundFolder.add({ visible: groundVisible }, 'visible')
-        .name('Show Ground')
-        .onChange(value => {
-            groundVisible = value;
-            if (groundMirror) {
-                groundMirror.visible = value;
-            }
-        });
+            .name('Show Ground')
+            .onChange(value => {
+                groundVisible = value;
+                if (groundMirror) {
+                    groundMirror.visible = value;
+                }
+            });
         
         // Add reflective ground toggle
         gui.groundFolder.add({ reflective: useReflectiveGround }, 'reflective')
-        .name('Reflective Ground')
-        .onChange(value => {
-            useReflectiveGround = value;
-            updateGround();
-            // Rebuild the GUI to show appropriate controls
-            setupGroundMaterialGUI();
-        });
+            .name('Reflective Ground')
+            .onChange(value => {
+                useReflectiveGround = value;
+                updateGround();
+                // Rebuild the GUI to show appropriate controls
+                setupGroundMaterialGUI();
+            });
         
         if (useReflectiveGround) {
             // Reflector-specific controls
             gui.groundFolder.add({ reflectivity: groundReflectivity }, 'reflectivity', 0, 1, 0.01)
-            .name('Reflectivity')
-            .onChange(value => {
-                groundReflectivity = value;
-                updateGround();
-            });
+                .name('Reflectivity')
+                .onChange(value => {
+                    groundReflectivity = value;
+                    updateGround();
+                });
             
             gui.groundFolder.add({ clipBias: 0.003 }, 'clipBias', 0, 0.01, 0.0001)
-            .name('Clip Bias')
-            .onChange(value => {
-                updateGround();
-            });
+                .name('Clip Bias')
+                .onChange(value => {
+                    updateGround();
+                });
         } else {
             // Non-reflective ground controls
             
             // Add texture toggle
             gui.groundFolder.add({ useTexture: useGroundTexture }, 'useTexture')
-            .name('Use Texture')
-            .onChange(value => {
-                useGroundTexture = value;
-                updateGround();
-                // Rebuild the GUI to show/hide texture dropdown
-                setupGroundMaterialGUI();
-            });
+                .name('Use Texture')
+                .onChange(value => {
+                    useGroundTexture = value;
+                    updateGround();
+                    // Rebuild the GUI to show/hide texture dropdown
+                    setupGroundMaterialGUI();
+                });
             
             // Always show texture dropdown when not using reflective ground
             if (useGroundTexture) {
                 gui.groundFolder.add({ texture: selectedGroundTexture }, 'texture', groundTextureOptions)
-                .name('Select Texture')
-                .onChange(value => {
-                    selectedGroundTexture = value;
-                    updateGround();
-                });
+                    .name('Select Texture')
+                    .onChange(value => {
+                        selectedGroundTexture = value;
+                        updateGround();
+                    });
             }
             
-            // Update the material property sliders section in setupGroundMaterialGUI()
+            // Update the material property sliders section
             if (groundMirror && groundMirror.material) {
                 const material = groundMirror.material;
                 gui.groundFolder.add(material, 'roughness', 0, 1, 0.01)
-                .name('Roughness')
-                .onChange(value => {
-                    material.roughness = value;
-                    material.needsUpdate = true;
-                    // Force rendering update
-                    renderer.render(scene, camera);
-                    composer.render();
-                });
+                    .name('Roughness')
+                    .onChange(value => {
+                        material.roughness = value;
+                        material.needsUpdate = true;
+                        // Force rendering update
+                        renderer.render(scene, camera);
+                        composer.render();
+                    });
                 
                 gui.groundFolder.add(material, 'metalness', 0, 1, 0.01)
-                .name('Metalness')
-                .onChange(value => {
-                    material.metalness = value;
-                    material.needsUpdate = true;
-                    // Force rendering update
-                    renderer.render(scene, camera);
-                    composer.render();
-                });
+                    .name('Metalness')
+                    .onChange(value => {
+                        material.metalness = value;
+                        material.needsUpdate = true;
+                        // Force rendering update
+                        renderer.render(scene, camera);
+                        composer.render();
+                    });
                 
                 gui.groundFolder.add(material, 'envMapIntensity', 0, 3, 0.1)
-                .name('EnvMap Intensity')
-                .onChange(value => {
-                    material.envMapIntensity = value;
-                    material.needsUpdate = true;
-                    // Force rendering update
-                    renderer.render(scene, camera);
-                    composer.render();
-                });
+                    .name('EnvMap Intensity')
+                    .onChange(value => {
+                        material.envMapIntensity = value;
+                        material.needsUpdate = true;
+                        // Force rendering update
+                        renderer.render(scene, camera);
+                        composer.render();
+                    });
             }
         }
         
         // Common controls for both ground types
         gui.groundFolder.addColor({ color: groundColor ? '#' + groundColor.toString(16).padStart(6, '0') : '#ffffff' }, 'color')
-        .name('Ground Color')
-        .onChange(value => {
-            groundColor = new THREE.Color(value).getHex();
-            if (useReflectiveGround) {
-                updateGround(); // Reflector needs a full rebuild
-            } else if (!useGroundTexture) {
-                groundMirror.material.color.set(groundColor);
-            } else if (groundMirror && groundMirror.material) {
-                groundMirror.material.color.set(groundColor);
-            }
-        });
+            .name('Ground Color')
+            .onChange(value => {
+                groundColor = new THREE.Color(value).getHex();
+                if (useReflectiveGround) {
+                    updateGround(); // Reflector needs a full rebuild
+                } else if (!useGroundTexture) {
+                    groundMirror.material.color.set(groundColor);
+                } else if (groundMirror && groundMirror.material) {
+                    groundMirror.material.color.set(groundColor);
+                }
+            });
+            
+        // Open the folder by default
+        gui.groundFolder.open();
     }
