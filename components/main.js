@@ -20,7 +20,6 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 // Add this import at the top
 import { Reflector } from 'three/addons/objects/Reflector.js';
 
-const showAllBricks = true; // Toggle this variable to create all bricks per layer
 
 // Graphics variables
 let container, stats;
@@ -53,7 +52,7 @@ let gui;
 let bloomPass, bokehPass, toneMapPass;
 
 // Add these variables for auto-focus
-let autoFocus = true;
+let autoFocus = false;
 let focusUpdateFrequency = 10; // Update focus every N frames
 let frameCounter = 0;
 let towerCenter = new THREE.Vector3(0, 5, 0); // Approximate center of the tower
@@ -77,6 +76,15 @@ let groundMirror; // Make sure this is declared at the top level
 let useReflectiveGround = true;  // Toggle between reflective and standard ground
 let groundReflectivity = .1;    // Store reflectivity value
 let groundColor = 0xffffff;      // Store ground color
+
+// Add these variables near the other ground-related variables (around line 70)
+let useGroundTexture = true; // Whether to use texture or solid color
+let groundTextureOptions = ['background.jpg', 'bg4.jpg', 'bg1.jpg', 'bg3.jpg', 'bg2.jpg', 'bg4_low.jpg', 'grid.png', 'bg5.png', 'bg4.png'];
+let selectedGroundTexture = 'bg4.jpg';
+
+// Add this variable with your other scene-related variables
+let sceneHeight = 0;
+let sceneGroup = null; // Will hold all scene objects except the background
 
 // Physics variables
 const gravityConstant = -9.8;
@@ -189,7 +197,7 @@ function initGraphics() {
     container = document.getElementById('container');
     
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.2, 2000);
-    camera.position.set(-12, 24, -12);
+    camera.position.set(-120, 24, -120);
     
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xCCCCCC);
@@ -293,6 +301,10 @@ function initGraphics() {
     
     // Add GUI controls after setting up the renderer and effects
     setupGUI();
+    
+    // Create a container for all scene objects
+    sceneGroup = new THREE.Group();
+    scene.add(sceneGroup);
 }
 
 // Add this function to create and configure the GUI
@@ -323,7 +335,7 @@ function setupGUI() {
     
     // Create DOF folder
     const dofFolder = gui.addFolder('Depth of Field');
-
+    
     dofFolder.add({ dofEnabled: dofEnabled }, 'dofEnabled').name('Enable Depth of Field').onChange(value => {
         dofEnabled = value;
         bokehPass.enabled = value;
@@ -346,7 +358,7 @@ function setupGUI() {
     dofFolder.add({ autoFocus: autoFocus }, 'autoFocus').name('Auto Focus').onChange(value => {
         autoFocus = value;
     });
-
+    
     dofFolder.open();
     
     // Ground Material folder - only add if groundMaterial exists
@@ -401,6 +413,14 @@ function setupGUI() {
             loadHdrEnvironment(value);
         });
         
+        // Add scene height control
+        // renderFolder.add({ height: sceneHeight }, 'height', -500, 500, 1)
+        // .name('Scene Height')
+        // .onChange(value => {
+        //     sceneHeight = value;
+        //     sceneGroup.position.y = value;
+        // });
+        
         renderFolder.open();
         
         // Position GUI in top right
@@ -411,7 +431,7 @@ function setupGUI() {
         // Gui for ground added in this function called in createObjects()
         // setupGroundMaterialGUI();
     }
-        
+    
     // Add this function to load HDR environments
     function loadHdrEnvironment(filename) {
         const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -456,7 +476,7 @@ function setupGUI() {
     function updateGround() {
         // Remove existing ground if any
         if (groundMirror) {
-            scene.remove(groundMirror);
+            sceneGroup.remove(groundMirror);
         }
         
         const groundGeometry = new THREE.PlaneGeometry(200, 200);
@@ -472,21 +492,38 @@ function setupGUI() {
             });
         } else {
             // Use standard material for non-reflective ground
-            groundMirror = new THREE.Mesh(groundGeometry, 
-                new THREE.MeshStandardMaterial({
-                    color: groundColor,
-                    roughness: 0.3,
-                    metalness: 0.8,
-                    envMapIntensity: 1.0
-                })
-            );
+            if (useGroundTexture && selectedGroundTexture !== 'none') {
+                // Create material with texture
+                const texture = textureLoader.load(`textures/${selectedGroundTexture}`);
+                texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(1, 1); // Adjust repeating pattern as needed
+                
+                groundMirror = new THREE.Mesh(groundGeometry, 
+                    new THREE.MeshStandardMaterial({
+                        map: texture,
+                        roughness: 0.3,
+                        metalness: 0.2,
+                        envMapIntensity: 1.0
+                    })
+                );
+            } else {
+                // Use solid color material
+                groundMirror = new THREE.Mesh(groundGeometry, 
+                    new THREE.MeshStandardMaterial({
+                        color: groundColor,
+                        roughness: 0.3,
+                        metalness: 0.8,
+                        envMapIntensity: 1.0
+                    })
+                );
+            }
         }
         
         groundMirror.rotateX(-Math.PI / 2);
         groundMirror.position.set(0, -0.01, 0);
         groundMirror.visible = groundVisible;
         groundMirror.receiveShadow = true;
-        scene.add(groundMirror);
+        sceneGroup.add(groundMirror);
         
         // Update material reference
         groundMaterial = groundMirror.material;
@@ -642,8 +679,8 @@ function setupGUI() {
         const body = new Ammo.btRigidBody(rbInfo);
         body.setSleepingThresholds(0.01, 0.01);
         // body.setFriction(.5);
-        body.setFriction(1);
-        body.setRestitution(.0);
+        body.setFriction(.8);
+        body.setRestitution(.2);
         body.setDamping(0.5, 1); // Adjust values between 0 (no damping) and 1 (max damping):
         // linear damping, which will gradually slow down the object's movement along its path.
         // angular damping, which will gradually reduce the object's spinning motion.
@@ -916,18 +953,18 @@ function updateFocusOnTower() {
         });
         rigidBodies.length = 0; // Clear the array
     }
-
-// Updated ground material GUI
-function setupGroundMaterialGUI() {
-    if (!gui || !gui.groundFolder) return;
     
-    // Clear existing controllers
-    while(gui.groundFolder.__controllers && gui.groundFolder.__controllers.length > 0) {
-        gui.groundFolder.__controllers[0].remove();
-    }
-    
-    // Add visibility toggle
-    gui.groundFolder.add({ visible: groundVisible }, 'visible')
+    // Updated ground material GUI
+    function setupGroundMaterialGUI() {
+        if (!gui || !gui.groundFolder) return;
+        
+        // Clear existing controllers
+        while(gui.groundFolder.__controllers && gui.groundFolder.__controllers.length > 0) {
+            gui.groundFolder.__controllers[0].remove();
+        }
+        
+        // Add visibility toggle
+        gui.groundFolder.add({ visible: groundVisible }, 'visible')
         .name('Show Ground')
         .onChange(value => {
             groundVisible = value;
@@ -935,47 +972,100 @@ function setupGroundMaterialGUI() {
                 groundMirror.visible = value;
             }
         });
-    
-    // Add reflective ground toggle
-    gui.groundFolder.add({ reflective: useReflectiveGround }, 'reflective')
+        
+        // Add reflective ground toggle
+        gui.groundFolder.add({ reflective: useReflectiveGround }, 'reflective')
         .name('Reflective Ground')
         .onChange(value => {
             useReflectiveGround = value;
             updateGround();
+            // Rebuild the GUI to show appropriate controls
+            setupGroundMaterialGUI();
         });
-    
-    // Add controls specific to ground type
-    if (useReflectiveGround) {
-        // Reflector-specific controls
-        gui.groundFolder.add({ reflectivity: groundReflectivity }, 'reflectivity', 0, 1, 0.01)
+        
+        if (useReflectiveGround) {
+            // Reflector-specific controls
+            gui.groundFolder.add({ reflectivity: groundReflectivity }, 'reflectivity', 0, 1, 0.01)
             .name('Reflectivity')
             .onChange(value => {
                 groundReflectivity = value;
                 updateGround();
             });
-        
-        gui.groundFolder.add({ clipBias: 0.003 }, 'clipBias', 0, 0.01, 0.0001)
+            
+            gui.groundFolder.add({ clipBias: 0.003 }, 'clipBias', 0, 0.01, 0.0001)
             .name('Clip Bias')
             .onChange(value => {
                 updateGround();
             });
-    } else {
-        // Standard material controls for non-reflective ground
-        const material = groundMirror.material;
-        gui.groundFolder.add(material, 'roughness', 0, 1, 0.01).name('Roughness');
-        gui.groundFolder.add(material, 'metalness', 0, 1, 0.01).name('Metalness');
-        gui.groundFolder.add(material, 'envMapIntensity', 0, 3, 0.1).name('EnvMap Intensity');
-    }
-    
-    // Common controls for both ground types
-    gui.groundFolder.addColor({ color: '#ffffff' }, 'color')
+        } else {
+            // Non-reflective ground controls
+            
+            // Add texture toggle
+            gui.groundFolder.add({ useTexture: useGroundTexture }, 'useTexture')
+            .name('Use Texture')
+            .onChange(value => {
+                useGroundTexture = value;
+                updateGround();
+                // Rebuild the GUI to show/hide texture dropdown
+                setupGroundMaterialGUI();
+            });
+            
+            // Always show texture dropdown when not using reflective ground
+            if (useGroundTexture) {
+                gui.groundFolder.add({ texture: selectedGroundTexture }, 'texture', groundTextureOptions)
+                .name('Select Texture')
+                .onChange(value => {
+                    selectedGroundTexture = value;
+                    updateGround();
+                });
+            }
+            
+            // Update the material property sliders section in setupGroundMaterialGUI()
+            if (groundMirror && groundMirror.material) {
+                const material = groundMirror.material;
+                gui.groundFolder.add(material, 'roughness', 0, 1, 0.01)
+                .name('Roughness')
+                .onChange(value => {
+                    material.roughness = value;
+                    material.needsUpdate = true;
+                    // Force rendering update
+                    renderer.render(scene, camera);
+                    composer.render();
+                });
+                
+                gui.groundFolder.add(material, 'metalness', 0, 1, 0.01)
+                .name('Metalness')
+                .onChange(value => {
+                    material.metalness = value;
+                    material.needsUpdate = true;
+                    // Force rendering update
+                    renderer.render(scene, camera);
+                    composer.render();
+                });
+                
+                gui.groundFolder.add(material, 'envMapIntensity', 0, 3, 0.1)
+                .name('EnvMap Intensity')
+                .onChange(value => {
+                    material.envMapIntensity = value;
+                    material.needsUpdate = true;
+                    // Force rendering update
+                    renderer.render(scene, camera);
+                    composer.render();
+                });
+            }
+        }
+        
+        // Common controls for both ground types
+        gui.groundFolder.addColor({ color: groundColor ? '#' + groundColor.toString(16).padStart(6, '0') : '#ffffff' }, 'color')
         .name('Ground Color')
         .onChange(value => {
             groundColor = new THREE.Color(value).getHex();
             if (useReflectiveGround) {
                 updateGround(); // Reflector needs a full rebuild
-            } else {
+            } else if (!useGroundTexture) {
+                groundMirror.material.color.set(groundColor);
+            } else if (groundMirror && groundMirror.material) {
                 groundMirror.material.color.set(groundColor);
             }
         });
-}
+    }
