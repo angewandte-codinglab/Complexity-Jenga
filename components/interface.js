@@ -11,6 +11,8 @@ export function initInterface() {
     setupDragControls();
 }
 
+let blockTouched = false;
+
 function setupInputHandlers() {
     // Mouse events
     document.addEventListener('mousedown', () => {
@@ -31,6 +33,7 @@ function setupInputHandlers() {
             createObjects();
         } else if (event.code === "Enter") {
             state.runPhysics = !state.runPhysics;
+            console.log("Physics running: " + state.runPhysics);
         } else if (event.code === "KeyM") {
             state.controls.touches.ONE = (state.controls.touches.ONE === THREE.TOUCH.PAN) 
                 ? THREE.TOUCH.ROTATE 
@@ -44,9 +47,10 @@ function setupInputHandlers() {
     });
     
     document.addEventListener('keyup', (event) => {
-        if (!event.metaKey && !event.ctrlKey) {
+        // console.log(event)
+        if (event.key === 'Control' || event.key === 'Meta') {
             console.log("Orbit enabled");
-            state.runPhysics = !state.runPhysics;
+            if (blockTouched) state.runPhysics = !state.runPhysics;
             state.orbitControls.enabled = true;
             state.dragControls.enabled = false;
         }
@@ -128,7 +132,9 @@ function onMouseMove(event) {
     if (intersects.length > 0) {
         const intersectedBlock = intersects[0].object;
         showBlockInfo(intersectedBlock, event);
+        blockTouched = true;
     } else {
+        blockTouched = false;
         hideBlockInfo();
     }
 }
