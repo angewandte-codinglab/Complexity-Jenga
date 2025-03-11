@@ -197,8 +197,55 @@ export function createRigidBody(threeObject, physicsShape, mass, pos, quat) {
     state.physicsWorld.addRigidBody(body);
 }
 
+// function createMaterial(color) {
+//     return new THREE.MeshPhongMaterial({ color: color });
+// }
+
+
+// Based on approach found here: https://jsfiddle.net/prisoner849/kmau6591/
 function createMaterial(color) {
-    return new THREE.MeshPhongMaterial({ color: color });
+    // Convert hex color to RGB vector for shader
+    const threeColor = new THREE.Color(color);
+    
+    // Define shader code
+    const vertexShader = `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+        }
+    `;
+    
+    const fragmentShader = `
+        varying vec2 vUv;
+        uniform float thickness;
+        uniform vec3 color;
+        
+        float edgeFactor(vec2 p){
+            vec2 grid = abs(fract(p - 0.5) - 0.5) / fwidth(p) / thickness;
+            return min(grid.x, grid.y);
+        }
+        
+        void main() {
+            float a = edgeFactor(vUv);
+            
+         // Mix between black for the edges and the provided color for the main surface
+            vec3 c = mix(vec3(0.0), color, a);
+            
+            gl_FragColor = vec4(c, 1.0);
+        }
+    `;
+    
+    // Create shader material with uniforms
+    return new THREE.ShaderMaterial({
+        uniforms: {
+            thickness: { value: 2 },  // Edge thickness (adjust as needed)
+            color: { value: new THREE.Vector3(threeColor.r, threeColor.g, threeColor.b) }
+        },
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
+        side: THREE.DoubleSide  // Render both sides for complete outline effect
+    });
 }
 
 export function removeAllBlocks() {
