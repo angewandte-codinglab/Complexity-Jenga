@@ -144,7 +144,7 @@ function createBlocksFromData(data, brickMass, brickLength, brickDepth, brickHei
                     brickMass,
                     pos,
                     quat,
-                    createMaterial(d.color)
+                    createMaterialSimple(d.color)
                 );
                 
                 brick.castShadow = true;
@@ -219,11 +219,6 @@ export function createRigidBody(threeObject, physicsShape, mass, pos, quat) {
     state.physicsWorld.addRigidBody(body);
 }
 
-// function createMaterial(color) {
-//     return new THREE.MeshPhongMaterial({ color: color });
-// }
-
-
 // Based on approach found here: https://jsfiddle.net/prisoner849/kmau6591/
 function createMaterial(color) {
     // Convert hex color to RGB vector for shader
@@ -261,13 +256,17 @@ function createMaterial(color) {
     // Create shader material with uniforms
     return new THREE.ShaderMaterial({
         uniforms: {
-            thickness: { value: 2 },  // Edge thickness (adjust as needed)
+            thickness: { value: 1 },  // Edge thickness (adjust as needed)
             color: { value: new THREE.Vector3(threeColor.r, threeColor.g, threeColor.b) }
         },
         vertexShader: vertexShader,
         fragmentShader: fragmentShader,
         side: THREE.DoubleSide  // Render both sides for complete outline effect
     });
+}
+
+function createMaterialSimple(color) {
+    return new THREE.MeshPhongMaterial({ color: color });
 }
 
 export function removeAllBlocks() {

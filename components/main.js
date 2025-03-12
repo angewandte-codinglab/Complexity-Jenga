@@ -23,7 +23,7 @@ function init() {
     initInput();
 
     // Initialize GUI controls
-    initGUI();
+    // initGUI();
     
     
     // Create initial objects (ground plane, Jenga tower)

@@ -93,7 +93,7 @@ function setupMaterialGUI() {
     const materialFolder = gui.addFolder('Brick Material');
     
     // Add thickness control for brick outlines
-    materialFolder.add({ thickness: 1.5 }, 'thickness', 0.5, 5, 0.1)
+    materialFolder.add({ thickness: 1.0 }, 'thickness', 0.5, 5, 0.1)
         .name('Outline Thickness')
         .onChange((value) => {
             // Update all existing materials
