@@ -1,0 +1,11 @@
+Model Information:
+* title:	Table
+* source:	https://sketchfab.com/3d-models/table-a28843f21d784fe98cc220ef0d1df478
+* author:	Silver10211 (https://sketchfab.com/Silver10211)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Table" (https://sketchfab.com/3d-models/table-a28843f21d784fe98cc220ef0d1df478) by Silver10211 (https://sketchfab.com/Silver10211) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
