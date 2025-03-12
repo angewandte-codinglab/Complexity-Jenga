@@ -5,7 +5,7 @@ import { state } from './state.js';
 import { removeAllBlocks, createObjects } from './physics.js';
 // Dropdown functions in Dropdown.js
 
-export function initInterface() {
+export function initInput() {
     setupInputHandlers();
     setupViewDropdown();
     setupDragControls();
@@ -113,6 +113,7 @@ function setupDragControls() {
             physicsBody.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
             physicsBody.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
         }
+        blockTouched = false;
     });
     
     // Initially disable drag controls

@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import { state } from './state.js';
 import { initGraphics, render } from './graphics.js';
 import { initPhysics, createObjects } from './physics.js';
-import { initInterface } from './interface.js';
+import { initInput } from './input.js';
+import { initGUI } from './gui.js';  // Import the GUI
+
 
 // Initialize Ammo.js physics engine and start the application
 Ammo().then(function(AmmoLib) {
@@ -18,7 +20,11 @@ function init() {
     initPhysics();
     
     // Initialize input handlers and UI
-    initInterface();
+    initInput();
+
+    // Initialize GUI controls
+    initGUI();
+    
     
     // Create initial objects (ground plane, Jenga tower)
     createObjects();
