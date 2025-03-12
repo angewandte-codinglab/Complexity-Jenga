@@ -49,15 +49,15 @@ export function initGraphics() {
 
 function setupLights() {
     // Ambient light to softly illuminate all objects
-    const ambientLightFill = new THREE.AmbientLight(0x404040, 1);
+    const ambientLightFill = new THREE.AmbientLight(0xf7f3ff, 0.8);
     state.scene.add(ambientLightFill);
     
     // Hemisphere light to simulate sky and ground light
-    const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x404040, 1);
+    const hemisphereLight = new THREE.HemisphereLight( 0x596df9, 0xe5e4e4, 1.5);
     state.scene.add(hemisphereLight);
     
     // Directional light (main light with shadows)
-    const light = new THREE.DirectionalLight(0xffffff, 3);
+    const light = new THREE.DirectionalLight(0xffebc5, 4.3);
     light.position.set(-40, 40, 20);
     light.castShadow = true;
     

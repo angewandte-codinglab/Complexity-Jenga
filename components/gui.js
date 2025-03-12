@@ -13,7 +13,10 @@ export function initGUI() {
     setupToneMappingGUI();
 
     // Create Physics Controls folder
-    setupPhysicsGUI();
+    // setupPhysicsGUI();
+
+    // Add lights controls
+    setupLightsGUI();
     
     // Create Material Controls folder 
     setupMaterialGUI();
@@ -105,4 +108,105 @@ function setupMaterialGUI() {
         });
     
     materialFolder.open();
+}
+
+function setupLightsGUI() {
+    const lightsFolder = gui.addFolder('Lights');
+
+    // Store initial light settings
+    const lightSettings = {
+        ambient: {
+            color: '#f7f3ff',
+            intensity: 1
+        },
+        hemisphere: {
+            skyColor: '#596df9',
+            groundColor: '#e5e4e4',
+            intensity: 1
+        },
+        directional: {
+            color: '#ffebc5',
+            intensity: 3,
+            position: {
+                x: -40,
+                y: 40,
+                z: 20
+            }
+        }
+    };
+
+    // Ambient Light Controls
+    const ambientFolder = lightsFolder.addFolder('Ambient Light');
+    ambientFolder.addColor(lightSettings.ambient, 'color')
+        .name('Color')
+        .onChange(value => {
+            const light = state.scene.children.find(child => child instanceof THREE.AmbientLight);
+            if (light) light.color.set(value);
+        });
+    ambientFolder.add(lightSettings.ambient, 'intensity', 0, 5)
+        .name('Intensity')
+        .onChange(value => {
+            const light = state.scene.children.find(child => child instanceof THREE.AmbientLight);
+            if (light) light.intensity = value;
+        });
+
+    // Hemisphere Light Controls
+    const hemiFolder = lightsFolder.addFolder('Hemisphere Light');
+    hemiFolder.addColor(lightSettings.hemisphere, 'skyColor')
+        .name('Sky Color')
+        .onChange(value => {
+            const light = state.scene.children.find(child => child instanceof THREE.HemisphereLight);
+            if (light) light.color.set(value);
+        });
+    hemiFolder.addColor(lightSettings.hemisphere, 'groundColor')
+        .name('Ground Color')
+        .onChange(value => {
+            const light = state.scene.children.find(child => child instanceof THREE.HemisphereLight);
+            if (light) light.groundColor.set(value);
+        });
+    hemiFolder.add(lightSettings.hemisphere, 'intensity', 0, 5)
+        .name('Intensity')
+        .onChange(value => {
+            const light = state.scene.children.find(child => child instanceof THREE.HemisphereLight);
+            if (light) light.intensity = value;
+        });
+
+    // Directional Light Controls
+    const dirFolder = lightsFolder.addFolder('Directional Light');
+    dirFolder.addColor(lightSettings.directional, 'color')
+        .name('Color')
+        .onChange(value => {
+            const light = state.scene.children.find(child => child instanceof THREE.DirectionalLight);
+            if (light) light.color.set(value);
+        });
+    dirFolder.add(lightSettings.directional, 'intensity', 0, 10)
+        .name('Intensity')
+        .onChange(value => {
+            const light = state.scene.children.find(child => child instanceof THREE.DirectionalLight);
+            if (light) light.intensity = value;
+        });
+    
+    // Directional Light Position Controls
+    const posFolder = dirFolder.addFolder('Position');
+    posFolder.add(lightSettings.directional.position, 'x', -100, 100)
+        .onChange(updateDirectionalLightPosition);
+    posFolder.add(lightSettings.directional.position, 'y', -100, 100)
+        .onChange(updateDirectionalLightPosition);
+    posFolder.add(lightSettings.directional.position, 'z', -100, 100)
+        .onChange(updateDirectionalLightPosition);
+
+    // Helper function to update directional light position
+    function updateDirectionalLightPosition() {
+        const light = state.scene.children.find(child => child instanceof THREE.DirectionalLight);
+        if (light) {
+            light.position.set(
+                lightSettings.directional.position.x,
+                lightSettings.directional.position.y,
+                lightSettings.directional.position.z
+            );
+        }
+    }
+
+    // Open the lights folder by default
+    lightsFolder.open();
 }
