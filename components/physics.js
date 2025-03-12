@@ -31,17 +31,39 @@ export function createObjects() {
     const quat = new THREE.Quaternion();
 
     // Ground
-    createGround(pos, quat);
+    // createGround(pos, quat);
+    createGroundInvisible(pos, quat);
 
     // Jenga blocks from data
     createJengaTower();
+}
+
+function createGroundInvisible(pos, quat) {
+    pos.set(0, -0.5, 0);
+    quat.set(0, 0, 0, 1);
+    
+    // Create invisible material
+    const invisibleMaterial = new THREE.MeshBasicMaterial({ 
+        transparent: true, 
+        opacity: 0,
+        side: THREE.DoubleSide
+    });
+    
+    const ground = createParalellepiped(80*.75, 1, 78, 0, pos, quat, invisibleMaterial);
+    
+    // Remove shadow casting/receiving for invisible ground
+    ground.castShadow = false;
+    ground.receiveShadow = true;
+    
+    // Remove texture loading since the ground is invisible
+    // state.textureLoader.load('textures/bg4.png', function(texture) {...});
 }
 
 function createGround(pos, quat) {
     pos.set(0, -0.5, 0);
     quat.set(0, 0, 0, 1);
     
-    const ground = createParalellepiped(80, 1, 80, 0, pos, quat, 
+    const ground = createParalellepiped(80*.75, 1, 78, 0, pos, quat, 
         new THREE.MeshPhongMaterial({ color: 0xFFFFFF })
     );
     
