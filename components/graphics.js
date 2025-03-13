@@ -10,7 +10,7 @@ export function initGraphics() {
     // Set up camera
     state.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.2, 2000);
     state.camera.position.set(-12*4, 48, -12*4);
-    
+
     // Set up scene
     state.scene = new THREE.Scene();
     state.scene.background = new THREE.Color(0xCCCCCC);
@@ -58,7 +58,7 @@ function setupLights() {
     
     // Directional light (main light with shadows)
     const light = new THREE.DirectionalLight(0xffebc5, 4.3);
-    light.position.set(-40, 40, 20);
+    light.position.set(-26, 24, 16);
     light.castShadow = true;
     
     // Shadow configuration
@@ -169,14 +169,17 @@ function loadTable() {
                 -center.z   // Center depth-wise
             );
             
-            // Find and update only the "New_Material"
+            // Find and update only  "New_Material"
             table.traverse((child) => {
                 if (child.isMesh && child.material.name === "New_Material") {
-                    console.log("Found New_Material, updating texture");
+                    // console.log("Found New_Material, updating texture");
                     child.material = new THREE.MeshPhongMaterial({
-                        map: texture,
-                        color: 0xFFFFFF,
-                        shininess: 0
+                        // map: texture,
+                        // color: 0xFFFFFF,
+                        // shininess: 0
+                        transparent: true,
+                        opacity: 0,
+                        visible: false, // This ensures the mesh doesn't participate in rendering at all
                     });
                 }
                 child.castShadow = true;

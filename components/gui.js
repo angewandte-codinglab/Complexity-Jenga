@@ -8,6 +8,9 @@ let gui;
 export function initGUI() {
     // Create the GUI
     gui = new GUI();
+
+    // Camera presets
+    setupCameraGUI();
     
     // Create Tone Mapping folder
     setupToneMappingGUI();
@@ -37,9 +40,11 @@ function setupToneMappingGUI() {
     
     // Settings object for the controller
     const settings = { 
-        toneMapping: 'None',
+        toneMapping: 'ACES Filmic',
         exposure: 1.0
     };
+
+    state.renderer.toneMapping = toneMappings[settings.toneMapping]
     
     // Add tone mapping controller
     toneMappingFolder.add(settings, 'toneMapping', Object.keys(toneMappings))
@@ -113,18 +118,26 @@ function setupMaterialGUI() {
 function setupLightsGUI() {
     const lightsFolder = gui.addFolder('Lights');
 
+    // Find lights in the scene
+    const ambientLight = state.scene.children.find(child => child instanceof THREE.AmbientLight);
+    const hemisphereLight = state.scene.children.find(child => child instanceof THREE.HemisphereLight);
+    const directionalLight = state.scene.children.find(child => child instanceof THREE.DirectionalLight);
+
     // Store initial light settings
     const lightSettings = {
         ambient: {
+            enabled: true,
             color: '#f7f3ff',
             intensity: 1
         },
         hemisphere: {
+            enabled: true,
             skyColor: '#596df9',
             groundColor: '#e5e4e4',
             intensity: 1
         },
         directional: {
+            enabled: true,
             color: '#ffebc5',
             intensity: 3,
             position: {
@@ -137,76 +150,129 @@ function setupLightsGUI() {
 
     // Ambient Light Controls
     const ambientFolder = lightsFolder.addFolder('Ambient Light');
+    ambientFolder.add(lightSettings.ambient, 'enabled')
+        .name('Enabled')
+        .onChange(value => {
+            ambientLight.visible = value;
+        });
     ambientFolder.addColor(lightSettings.ambient, 'color')
         .name('Color')
         .onChange(value => {
-            const light = state.scene.children.find(child => child instanceof THREE.AmbientLight);
-            if (light) light.color.set(value);
+            ambientLight.color.set(value);
         });
     ambientFolder.add(lightSettings.ambient, 'intensity', 0, 5)
         .name('Intensity')
         .onChange(value => {
-            const light = state.scene.children.find(child => child instanceof THREE.AmbientLight);
-            if (light) light.intensity = value;
+            ambientLight.intensity = value;
         });
 
     // Hemisphere Light Controls
     const hemiFolder = lightsFolder.addFolder('Hemisphere Light');
+    hemiFolder.add(lightSettings.hemisphere, 'enabled')
+        .name('Enabled')
+        .onChange(value => {
+            hemisphereLight.visible = value;
+        });
     hemiFolder.addColor(lightSettings.hemisphere, 'skyColor')
         .name('Sky Color')
         .onChange(value => {
-            const light = state.scene.children.find(child => child instanceof THREE.HemisphereLight);
-            if (light) light.color.set(value);
+            hemisphereLight.color.set(value);
         });
     hemiFolder.addColor(lightSettings.hemisphere, 'groundColor')
         .name('Ground Color')
         .onChange(value => {
-            const light = state.scene.children.find(child => child instanceof THREE.HemisphereLight);
-            if (light) light.groundColor.set(value);
+            hemisphereLight.groundColor.set(value);
         });
     hemiFolder.add(lightSettings.hemisphere, 'intensity', 0, 5)
         .name('Intensity')
         .onChange(value => {
-            const light = state.scene.children.find(child => child instanceof THREE.HemisphereLight);
-            if (light) light.intensity = value;
+            hemisphereLight.intensity = value;
         });
 
     // Directional Light Controls
     const dirFolder = lightsFolder.addFolder('Directional Light');
+    dirFolder.add(lightSettings.directional, 'enabled')
+        .name('Enabled')
+        .onChange(value => {
+            directionalLight.visible = value;
+        });
     dirFolder.addColor(lightSettings.directional, 'color')
         .name('Color')
         .onChange(value => {
-            const light = state.scene.children.find(child => child instanceof THREE.DirectionalLight);
-            if (light) light.color.set(value);
+            directionalLight.color.set(value);
         });
     dirFolder.add(lightSettings.directional, 'intensity', 0, 10)
         .name('Intensity')
         .onChange(value => {
-            const light = state.scene.children.find(child => child instanceof THREE.DirectionalLight);
-            if (light) light.intensity = value;
+            directionalLight.intensity = value;
         });
     
     // Directional Light Position Controls
     const posFolder = dirFolder.addFolder('Position');
     posFolder.add(lightSettings.directional.position, 'x', -100, 100)
-        .onChange(updateDirectionalLightPosition);
+        .onChange(() => updateDirectionalLightPosition());
     posFolder.add(lightSettings.directional.position, 'y', -100, 100)
-        .onChange(updateDirectionalLightPosition);
+        .onChange(() => updateDirectionalLightPosition());
     posFolder.add(lightSettings.directional.position, 'z', -100, 100)
-        .onChange(updateDirectionalLightPosition);
+        .onChange(() => updateDirectionalLightPosition());
 
-    // Helper function to update directional light position
     function updateDirectionalLightPosition() {
-        const light = state.scene.children.find(child => child instanceof THREE.DirectionalLight);
-        if (light) {
-            light.position.set(
-                lightSettings.directional.position.x,
-                lightSettings.directional.position.y,
-                lightSettings.directional.position.z
-            );
-        }
+        directionalLight.position.set(
+            lightSettings.directional.position.x,
+            lightSettings.directional.position.y,
+            lightSettings.directional.position.z
+        );
     }
 
     // Open the lights folder by default
     lightsFolder.open();
+}
+
+function setupCameraGUI() {
+    const cameraFolder = gui.addFolder('Camera');
+    
+    // Create dropdown options
+    const presetOptions = Object.keys(state.cameraPresets);
+    
+    // Create settings object and store it in state for external access
+    state.cameraSettings = {
+        preset: state.currentPreset
+    };
+
+    // Add dropdown to GUI and store controller in state
+    state.presetController = cameraFolder.add(state.cameraSettings, 'preset', presetOptions)
+        .name('Camera Preset')
+        .onChange((value) => {
+            applyCameraPreset(value);
+        });
+        
+    cameraFolder.open();
+}
+
+export function applyCameraPreset(presetName) {
+    const preset = state.cameraPresets[presetName];
+    if (!preset) return;
+    
+    // Set position and rotation
+    state.camera.position.copy(preset.position);
+    state.camera.rotation.set(
+        preset.rotation.x,
+        preset.rotation.y,
+        preset.rotation.z,
+        'XYZ'
+    );
+    
+    // Update orbit controls target
+    if (preset.orbit) {
+        state.orbitControls.target.copy(preset.orbit);
+    }
+    
+    // Update current preset and GUI
+    state.currentPreset = presetName;
+    if (state.cameraSettings) {
+        state.cameraSettings.preset = presetName;
+        state.presetController.updateDisplay();
+    }
+    
+    state.orbitControls.update();
 }
