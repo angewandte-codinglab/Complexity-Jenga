@@ -145,6 +145,7 @@ function createBlocksFromData(data, brickMass, brickLength, brickDepth, brickHei
                     pos,
                     quat,
                     createMaterialSimple(d.color)
+                    // createMaterial(d.color)
                 );
                 
                 brick.castShadow = true;

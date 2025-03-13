@@ -25,8 +25,15 @@ const cameraPresets = {
         position: new THREE.Vector3(-69.51, 56.72, -79.64),
         rotation: new THREE.Euler(-2.66, -0.69, -2.82),
         orbit: new THREE.Vector3(4.67, 15.11, 0.58)
+    },
+    BottomUp: {
+        position: new THREE.Vector3(-50, 4.6 -0.4),
+        rotation: new THREE.Euler(1.60, -1.1, 1.60),
+        orbit: new THREE.Vector3(8.60, 30.60, -0.35)
     }
 };
+
+
 
 // Shared state object
 export const state = {
@@ -78,7 +85,8 @@ export const state = {
     currentView: null,
     viewContainer: d3.select('#viewContainer'),
     colorScale: d3.scaleOrdinal()
-        .range(['#ff0000', '#ffff00', '#00ffff', '#0000ff', '#ff00ff'])
+        // .range(['#ff0000', '#ffff00', '#00ffff', '#0000ff', '#ff00ff'])
+        .range(['Silver', 'Yellow', 'DodgerBlue', 'Tomato', 'MediumSlateBlue'])
         .domain(['Oceania', 'Europe', 'Americas', 'Asia', 'Africa']),
     brick_layout: d3.scaleQuantize().range([1, 2, 3, 4])
 };
