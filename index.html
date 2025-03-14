@@ -5,29 +5,45 @@
     <title>Supply Chain Jenga Demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="./libs/bootstrap-5.3.3-dist/css/bootstrap.css">
     <link type="text/css" rel="stylesheet" href="./styles/main.css">
     <link type="text/css" rel="stylesheet" href="./styles/dropdown.css">
 </head>
 
 <body>
-    <div id="info">
-        <div id="viewContainer" class="d-flex"></div>
-        <div class="info-text">
-            <div class="fw-bold"> Use ctrl/cmd key + left mouse button to move bricks.</div>
-            <div class="fw-bold">Press space key to recreate tower.</div>
-            <div class="fw-bold">Press return key to start/stop physics simulation.</div>
-            <div>Press and hold mouse button for slow motion.</div>
-            <div>Use left mouse button to to orbit the view.</div>
-            <div>Use right mouse button to pan the camera.</div>
-            <div>Use mouse wheel to zoom in or out.</div>
-            <div>Hover over block to display data.</div>
+    <div id="viewContainer" class="d-flex position-relative">
+        <div id="info">
+            <div class="info-text d-flex flex-column">
+                <div class="mb-2">Move bricks: <span class="keyboard me-1">CTRL</span>/<span class="keyboard ms-1">CMD</span> + left mouse.</div>
+                <div class="mb-2">Recreate tower: <span class="keyboard">SPACE</span></div>
+                <div class="mb-2">Start/stop simulation: <span class="keyboard">ENTER</span></div>
+                <div class="mb-2">Press and hold mouse button for slow motion</div>
+                <div class="mb-2">Use left mouse button to to orbit the view</div>
+                <div class="mb-2">Use right mouse button to pan the camera.</div>
+                <div class="mb-2">Use mouse wheel to zoom in or out.</div>
+                <div class="mb-2">Hover over block to display data.</div>
+            </div>
         </div>
-        
+        <button type="button" class="btn btn-sm btn-light d-flex align-items-center justify-content-center position-absolute py-2 px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#about-modal" id="btn-about">about</button>
+        <div id="container" class="position-relative">
+            <div id="hoverBox"></div>
+        </div>
     </div>
-    <div id="container">
-        <div id="hoverBox"></div>
+    <div class="modal fade" id="about-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="about-modal" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">About Jenga Tower</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>text goes here.</p>
+                </div>
+            </div>
+        </div>
     </div>
     <script src="./libs/ammo.wasm.js"></script>
+    <script src="./libs/bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
     <script src="./libs/d3.v5.js"></script>
     <script type="text/javascript" src="./components/Dropdown.js"></script>
     <script type="importmap">

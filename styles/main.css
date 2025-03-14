@@ -153,3 +153,20 @@ select {
     justify-content: center;
     display: flex;
 }
+#btn-about{
+    font-size: 0.8em;
+    bottom: 1em;
+    left: 1em;
+    z-index: 100;
+}
+.keyboard{
+    border: 2px solid black;
+  box-shadow: 2px 2px black;
+  font-size: .85em;
+  line-height: .85em;
+  display: inline-block;
+  font-weight: 600;
+  letter-spacing: .05em;
+  padding: 3px 5px;
+  white-space: nowrap;
+}
