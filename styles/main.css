@@ -29,13 +29,14 @@ button {
     user-select: none;
     pointer-events: none;
 }
+
 #info {
     position: absolute;
     display: flex;
     flex-direction: column;
     top: 0px;
     width: 25%;
-    padding: 1em;
+    margin: 1em;
     box-sizing: border-box;
     z-index: 1;
     /* TODO Solve this in HTML */
@@ -45,7 +46,6 @@ button {
 #info .info-text{
     display: flex;
     flex-direction: column;
-    margin-top: 1em;
     font-size: 0.9em;
     background: #e6e6e6;
     padding: 0.5em;

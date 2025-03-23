@@ -83,7 +83,7 @@ export const state = {
     
     // Data
     currentView: null,
-    viewContainer: d3.select('#viewContainer'),
+    viewContainer: d3.select('#dropdown-container'),
     colorScale: d3.scaleOrdinal()
         // .range(['#ff0000', '#ffff00', '#00ffff', '#0000ff', '#ff00ff'])
         .range(['Silver', 'Yellow', 'DodgerBlue', 'Tomato', 'MediumSlateBlue'])
