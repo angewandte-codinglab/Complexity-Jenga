@@ -18,17 +18,24 @@
                 <div class="mb-2">Recreate tower: <span class="keyboard">SPACE</span></div>
                 <div class="mb-2">Start/stop simulation: <span class="keyboard">ENTER</span></div>
                 <div class="mb-2">Press and hold mouse button for slow motion</div>
-                <div class="mb-2">Use left mouse button to to orbit the view</div>
+                <div class="mb-2">Use left mouse button to orbit the view</div>
                 <div class="mb-2">Use right mouse button to pan the camera.</div>
                 <div class="mb-2">Use mouse wheel to zoom in or out.</div>
                 <div class="mb-2">Hover over block to display data.</div>
             </div>
         </div>
-        <button type="button" class="btn btn-sm btn-light d-flex align-items-center justify-content-center position-absolute py-2 px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#about-modal" id="btn-about">about</button>
+        
+        <!-- Legend Button -->
+        <button type="button" class="btn btn-sm btn-light d-flex align-items-center justify-content-center position-absolute py-2 px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#legend-modal" id="btn-legend">Legend</button>
+        
+        <!-- About Button -->
+        <button type="button" class="btn btn-sm btn-light d-flex align-items-center justify-content-center position-absolute py-2 px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#about-modal" id="btn-about">About</button>
+        
         <div id="container" class="position-relative">
             <div id="hoverBox"></div>
         </div>
     </div>
+
     <div class="modal fade" id="about-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="about-modal" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
             <div class="modal-content">
@@ -37,11 +44,33 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>text goes here.</p>
+                    <p>Text about data, authors, meaning, and so on goes here.</p>
                 </div>
+
             </div>
         </div>
     </div>
+	<div class="modal fade" id="legend-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="legend-modal" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Legend</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p>The global semiconductor supply chain is like an intricate web connecting countries and companies around the world.</p>
+					<p>Some countries are more central and critical than others, acting as hubs or essential pathways through which many connections pass.</p>
+					<p>To decide which countries are critical players in this network, we explored 2 importance measures: </p>
+					<button onclick="showGraph('centrality')">Betweenness Centrality</button>
+					<button onclick="showGraph('pagerank')">PageRank</button>
+					<button onclick="showGraph('tiles')">Jenga Tiles</button>
+					<div id="legend-graph" style="width: 100%; height: 500px;"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+
     <script src="./libs/ammo.wasm.js"></script>
     <script src="./libs/bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
     <script src="./libs/d3.v5.js"></script>
@@ -54,7 +83,7 @@
             }
         }
     </script>
-    <script type="module" src="./components/main.js"></script>
+    <script type="module" src="./components/main Julia.js"></script>
 </body>
 
 </html>
