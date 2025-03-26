@@ -1,5 +1,8 @@
 # Complexity-Jenga
- 
+
+Task updates: https://docs.google.com/document/d/1AQEi41hl2gY0aMCGIZypsbP8l2MdUKZU3MB2_ysgceM/edit?usp=sharing 
+
+
 Press space key to create new tower.
 Press return key to start/stop physics simulation.
 

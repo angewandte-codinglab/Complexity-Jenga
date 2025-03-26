@@ -22,13 +22,14 @@ export function loadCentralityGraph(container) {
     const svg = d3.select(container)
         .append("svg")
         .attr("width", 466)
-        .attr("height", 500);
+        .attr("height", 500)
+        .style('line-height',1.2);
 
     // Add explanation text
     const titleText = svg.append("text")
         .attr("x", 5)
         .attr("y", 25)
-        .attr("font-size", "16px")
+        .attr("font-size", "1rem")
         .style("font-weight", "bold")
         .style("fill", "black")
         .text("Betweenness Centrality - Connectivity of Countries");
@@ -39,7 +40,7 @@ export function loadCentralityGraph(container) {
         .attr("width", 450)
         .attr("height", 200)
         .append("xhtml:div")
-        .style("font-size", "12px")
+        .style("font-size", "0.85rem")
         .style("color", "black")
         .style("text-align", "justify")
         .style("word-wrap", "break-word")
@@ -52,7 +53,7 @@ export function loadCentralityGraph(container) {
 		.attr("width", 420)
 		.attr("height", 60)
 		.append("xhtml:div")
-		.style("font-size", "12px")
+		.style("font-size", "0.85rem")
 		.style("color", "black")
 		.style("text-align", "justify")
 		.style("word-wrap", "break-word")
@@ -216,7 +217,7 @@ export function loadPageRankGraph(container) {
     const titleText = svg.append("text")
         .attr("x", 5)
         .attr("y", 25)
-        .attr("font-size", "16px")
+        .attr("font-size", "1rem")
         .style("font-weight", "bold")
         .style("fill", "black")
         .text("PageRank - Importance of Countries");
@@ -227,7 +228,7 @@ export function loadPageRankGraph(container) {
     .attr("width", 420)
     .attr("height", 60)
     .append("xhtml:div")
-    .style("font-size", "12px")
+    .style("font-size", "0.85rem")
     .style("color", "black")
     .style("text-align", "justify")
     .style("word-wrap", "break-word")
@@ -239,7 +240,7 @@ export function loadPageRankGraph(container) {
         .attr("width", 450)
         .attr("height", 100)
         .append("xhtml:div")
-        .style("font-size", "12px")
+        .style("font-size", "0.85rem")
         .style("color", "black")
         .style("text-align", "justify")
         .style("word-wrap", "break-word")
@@ -379,7 +380,7 @@ export function loagTilesGraph(container) {
     const titleText = svg.append("text")
         .attr("x", 5)
         .attr("y", 25)
-        .attr("font-size", "16px")
+        .attr("font-size", "1rem")
         .style("font-weight", "bold")
         .style("fill", "black")
         .text("PageRank - Importance of Countries");
@@ -390,7 +391,7 @@ export function loagTilesGraph(container) {
         .attr("width", 450)
         .attr("height", 100)
         .append("xhtml:div")
-        .style("font-size", "12px")
+        .style("font-size", "16px")
         .style("color", "black")
         .style("text-align", "left")
         .style("word-wrap", "break-word")
@@ -459,7 +460,7 @@ export function loagTilesGraph(container) {
         svg.append("text")
             .attr("x", 20)
             .attr("y", 450)
-            .attr("font-size", "12px")
+            .attr("font-size", "0.85rem")
             .style("fill", "black")
             .text("Removing the small node D will not have a great impact on the network.");
 
