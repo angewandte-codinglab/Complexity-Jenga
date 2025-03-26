@@ -13,22 +13,43 @@
 <body>
     <div id="viewContainer" class="d-flex position-relative">
         <div id="info">
-            <div id="dropdown-container" class="col-12 mb-1"></div>
-            <div class="info-text d-flex flex-column">
-                <div class="mb-2">Move bricks: <span class="keyboard me-1">CTRL</span>/<span class="keyboard ms-1">CMD</span> + left mouse.</div>
-                <div class="mb-2">Recreate tower: <span class="keyboard">SPACE</span></div>
-                <div class="mb-2">Start/stop simulation: <span class="keyboard">ENTER</span></div>
-                <div class="mb-2">Press and hold mouse button for slow motion</div>
-                <div class="mb-2">Use left mouse button to orbit the view</div>
-                <div class="mb-2">Use right mouse button to pan the camera.</div>
-                <div class="mb-2">Use mouse wheel to zoom in or out.</div>
-                <div class="mb-2">Hover over block to display data.</div>
+            <div id="dropdown-container" class="col-12 my-1 mb-2"></div>
+            <button class="btn btn-sm btn-light fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#mouseevents" aria-expanded="false" aria-controls="mouseevents">
+                Controls
+            </button>
+            <div class="collapse" id="mouseevents">
+                <!-- <div class="info-text d-flex flex-column card card-body"> -->
+                <ul class="list-group list-group-flush ps-2">
+                    <button type="button" class="d-flex align-items-center justify-content-between btn btn-sm btn-light mt-2 fw-bold" id="btn-recreate">
+                        <div>Recreate tower</div><img class="key-icon" src="./imgs/key-space.svg">
+                    </button>
+                    <button type="button" class="d-flex align-items-center justify-content-between btn btn-sm btn-light mt-2 fw-bold" id="btn-togglesimulation">
+                        <div><span class="label disactive">Stop</span><span class="label active">Start</span> simulation</div><img class="key-icon" src="./imgs/key-enter.svg">
+                    </button>
+                    <button type="button" class="d-flex align-items-center justify-content-between btn btn-sm btn-light mt-2 fw-bold" id="btn-brickmoving">
+                        <div><span class="label disactive">Disable</span><span class="label active">Enable</span> Brick Moving</div>
+                        <div class="d-flex align-items-center ms-2">
+                            <img class="key-icon" src="./imgs/key-cmd.svg">
+                            <img class="key-icon" src="./imgs/mouse-left.svg">
+                        </div>
+                    </button>
+                </ul>
+                <div class="ps-2 mt-2">
+                <div class="info-text p-2 fw-bold">
+                    <!-- <div class="mb-2">Press and hold mouse button for slow motion</div> -->
+                    <div class="my-1 d-flex align-items-center justify-content-between">View brick info <img class="key-icon" src="./imgs/mouse-hover.svg"></div>
+                    <div class="my-1 d-flex align-items-center justify-content-between">Orbit the view <img class="key-icon" src="./imgs/mouse-left.svg"></div>
+                    <div class="my-1 d-flex align-items-center justify-content-between">Pan the view <img class="key-icon" src="./imgs/mouse-right.svg"></div>
+                    <div class="my-1 d-flex align-items-center justify-content-between">Zoom the view <img class="key-icon" src="./imgs/mouse-wheel.svg"></div>
+                </div>
+                </div>
             </div>
         </div>
         <!-- Legend Button -->
-        <button type="button" class="btn btn-sm btn-light d-flex align-items-center justify-content-center position-absolute py-2 px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#legend-modal" id="btn-legend">Legend</button>
-        <!-- About Button -->
-        <button type="button" class="btn btn-sm btn-light d-flex align-items-center justify-content-center position-absolute py-2 px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#about-modal" id="btn-about">About</button>
+        <div id="btns-about" class="col-12 d-flex align-items-center position-absolute">
+            <button type="button" class="btn btn-sm btn-light fw-bold" data-bs-toggle="modal" data-bs-target="#legend-modal" id="btn-legend">Legend</button>
+            <button type="button" class="btn btn-sm btn-light fw-bold ms-2" data-bs-toggle="modal" data-bs-target="#about-modal" id="btn-about">About</button>
+        </div>
         <div id="container" class="position-relative">
             <div id="hoverBox"></div>
         </div>
@@ -36,8 +57,8 @@
     <div class="modal fade" id="about-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="about-modal" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">About Jenga Tower</h5>
+                <div class="modal-header py-2">
+                    <h5 class="modal-title fs-6 fw-bold">About Jenga Tower</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -49,19 +70,19 @@
     <div class="modal fade" id="legend-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="legend-modal" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Legend</h5>
+                <div class="modal-header py-2">
+                    <h5 class="modal-title fs-6 fw-bold">Legend</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <!-- <div>directly show tower tile: sorting, 4 types</div> -->
                     <p>The global semiconductor supply chain is like an intricate web connecting countries and companies around the world.</p>
                     <p>Some countries are more central and critical than others, acting as hubs or essential pathways through which many connections pass.</p>
                     <p>To decide which countries are critical players in this network, we explored 2 importance measures: </p>
                     <div class="btn-group btn-group-sm" role="group" aria-label="view example">
-                        <button type="button" class="btn btn-dark" data-name="centrality" onclick="showGraph('centrality')">Betweenness Centrality</button>
-                        <button type="button" class="btn btn-outline-dark" data-name="pagerank" onclick="showGraph('pagerank')">PageRank</button>
+                        <button type="button" class="btn btn-sm enable" data-name="centrality" onclick="showGraph('centrality')">Betweenness Centrality</button>
+                        <button type="button" class="btn btn-sm" data-name="pagerank" onclick="showGraph('pagerank')">PageRank</button>
                     </div>
-                    <!-- <button type="button" class="btn btn-outline-dark" onclick="showGraph('tiles')">Jenga Tiles</button> -->
                     <div id="legend-graph" style="width: 100%; height: 500px;"></div>
                 </div>
             </div>
@@ -79,7 +100,7 @@
             }
         }
     </script>
-    <script type="module" src="./components/main Julia.js"></script>
+    <script type="module" src="./components/main.js"></script>
 </body>
 
 </html>

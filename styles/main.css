@@ -15,14 +15,7 @@ a:hover {
     text-decoration: underline;
 }
 
-button {
-    cursor: pointer;
-    text-transform: uppercase;
-}
-.fw-bold{
-    font-weight: bold;
-}
-.nocursor{
+.nocursor {
     -moz-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
@@ -32,10 +25,11 @@ button {
 
 #info {
     position: absolute;
-    display: flex;
-    flex-direction: column;
+    /*display: flex;
+    flex-direction: column;*/
     top: 0px;
-    width: 25%;
+    max-width: 25%;
+    min-width: 200px;
     margin: 1em;
     box-sizing: border-box;
     z-index: 1;
@@ -43,13 +37,23 @@ button {
     text-align: left;
 
 }
-#info .info-text{
+
+#info .info-text {
     display: flex;
     flex-direction: column;
-    font-size: 0.9em;
     background: #e6e6e6;
-    padding: 0.5em;
+    font-size: 0.85rem;
 }
+
+#info .list-group-item {
+    background: transparent;
+}
+
+.key-icon {
+    height: 1.5rem;
+    width: auto;
+}
+
 a,
 button,
 input,
@@ -123,20 +127,23 @@ select {
 #hoverBox .title {
     font-size: 1.3em;
 }
-#hoverBox .title-container{
+
+#hoverBox .title-container {
     display: flex;
     align-items: center;
-    
+
     font-weight: bold;
     padding: 1rem 1rem 0.5rem 1rem;
 }
-#hoverBox .title-container .pill{
+
+#hoverBox .title-container .pill {
     border-radius: 4px;
     font-size: 0.8em;
     padding: 0.2em 0.4em;
     margin: 0 1em;
     border: 3px solid;
 }
+
 #hoverBox .subtitle {
     color: #555;
     padding: 0 1rem;
@@ -153,28 +160,53 @@ select {
     justify-content: center;
     display: flex;
 }
-#btn-about{
+
+#btns-about {
     font-size: 0.8em;
+    left: 1em;
+    z-index: 100;
     bottom: 1em;
-    left: 1em;
-    z-index: 100;
-}
-#btn-legend {
-    font-size: 0.8em;
-    bottom: 4em; /* Position it just above the 'About' button */
-    left: 1em;
-    z-index: 100;
 }
 
-.keyboard{
-  border: 2px solid black;
-  box-shadow: 2px 2px black;
-  font-size: .85em;
-  line-height: .85em;
-  display: inline-block;
-  font-weight: 600;
-  letter-spacing: .05em;
-  padding: 3px 5px;
-  white-space: nowrap;
+.btn {
+    border: 2px solid black;
+    box-shadow: 2px 2px black;
+    display: inline-block;
+    letter-spacing: .05em;
+    padding: 3px 5px;
+    white-space: nowrap;
+    border-radius: 0;
+    color: #000;
+    font-weight: bold;
 }
 
+.btn:hover {
+    background: #f0f0f0;
+    border-color: #000;
+}
+
+.btn.enable {
+    background: #e6e6e6;
+}
+
+.btn .label.disactive {
+    display: none;
+}
+
+.btn .label.active {
+    display: inline-block;
+}
+
+.btn.enable .label.disactive {
+    display: inline-block;
+}
+
+.btn.enable .label.active {
+    display: none;
+}
+
+.modal-content {
+    border: 2px solid black;
+    box-shadow: 2px 2px black;
+    border-radius: 0;
+}
