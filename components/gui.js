@@ -23,7 +23,7 @@ export function initGUI() {
     
     // Create Material Controls folder 
     // setupMaterialGUI();
-    gui.hide();
+    // gui.hide();
 }
 
 function setupToneMappingGUI() {
@@ -77,7 +77,7 @@ function setupToneMappingGUI() {
             });
         });
     
-    toneMappingFolder.open();
+    // toneMappingFolder.open();
 }
 function setupPhysicsGUI() {
     const physicsFolder = gui.addFolder('Physics');
@@ -94,7 +94,7 @@ function setupPhysicsGUI() {
             state.timeDiv = value;
         });
     
-    physicsFolder.open();
+    // physicsFolder.open();
 }
 
 function setupMaterialGUI() {
@@ -113,7 +113,7 @@ function setupMaterialGUI() {
             });
         });
     
-    materialFolder.open();
+    // materialFolder.open();
 }
 
 function setupLightsGUI() {
@@ -226,7 +226,7 @@ function setupLightsGUI() {
     }
 
     // Open the lights folder by default
-    lightsFolder.open();
+    // lightsFolder.open();
 }
 
 function setupCameraGUI() {
