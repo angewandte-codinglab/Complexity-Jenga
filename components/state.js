@@ -86,7 +86,7 @@ export const state = {
     viewContainer: d3.select('#dropdown-container'),
     colorScale: d3.scaleOrdinal()
         // .range(['#ff0000', '#ffff00', '#00ffff', '#0000ff', '#ff00ff'])
-        .range(['Silver', 'Yellow', 'DodgerBlue', 'Tomato', 'MediumSlateBlue'])
+        .range(['Lavender', 'Yellow', 'DodgerBlue', 'Tomato', 'MediumSlateBlue'])
         .domain(['Oceania', 'Europe', 'Americas', 'Asia', 'Africa']),
     brick_layout: d3.scaleQuantize().range([1, 2, 3, 4])
 };

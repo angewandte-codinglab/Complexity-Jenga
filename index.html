@@ -5,13 +5,16 @@
     <title>Supply Chain Jenga Demo</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
     <link type="text/css" rel="stylesheet" href="./libs/bootstrap-5.3.3-dist/css/bootstrap.css">
     <link type="text/css" rel="stylesheet" href="./styles/main.css">
     <link type="text/css" rel="stylesheet" href="./styles/dropdown.css">
 </head>
 
 <body>
-    <div id="viewContainer" class="d-flex position-relative">
+    <div id="viewContainer" class="d-flex position-relative container-fluid g-0">
         <div id="info">
             <div id="dropdown-container" class="col-12 my-1 mb-2"></div>
             <button class="btn btn-sm btn-light fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#mouseevents" aria-expanded="false" aria-controls="mouseevents">
@@ -35,13 +38,13 @@
                     </button>
                 </ul>
                 <div class="ps-2 mt-2">
-                <div class="info-text p-2 fw-bold">
-                    <!-- <div class="mb-2">Press and hold mouse button for slow motion</div> -->
-                    <div class="my-1 d-flex align-items-center justify-content-between">View brick info <img class="key-icon" src="./imgs/mouse-hover.svg"></div>
-                    <div class="my-1 d-flex align-items-center justify-content-between">Orbit the view <img class="key-icon" src="./imgs/mouse-left.svg"></div>
-                    <div class="my-1 d-flex align-items-center justify-content-between">Pan the view <img class="key-icon" src="./imgs/mouse-right.svg"></div>
-                    <div class="my-1 d-flex align-items-center justify-content-between">Zoom the view <img class="key-icon" src="./imgs/mouse-wheel.svg"></div>
-                </div>
+                    <div class="info-text p-2 fw-bold">
+                        <!-- <div class="mb-2">Press and hold mouse button for slow motion</div> -->
+                        <div class="my-1 d-flex align-items-center justify-content-between">View brick info <img class="key-icon" src="./imgs/mouse-hover.svg"></div>
+                        <div class="my-1 d-flex align-items-center justify-content-between">Orbit the view <img class="key-icon" src="./imgs/mouse-left.svg"></div>
+                        <div class="my-1 d-flex align-items-center justify-content-between">Pan the view <img class="key-icon" src="./imgs/mouse-right.svg"></div>
+                        <div class="my-1 d-flex align-items-center justify-content-between">Zoom the view <img class="key-icon" src="./imgs/mouse-wheel.svg"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -58,11 +61,74 @@
         <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header py-2">
-                    <h5 class="modal-title fs-6 fw-bold">About Jenga Tower</h5>
+                    <!-- <h5 class="modal-title fs-6 fw-bold">Block Tower: The Global Supply Chain</h5> -->
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Text about data, authors, meaning, and so on goes here.</p>
+                    <h1 class="fs-1 fw-bolder m-0 lh-1">Block Tower</h1>
+                    <h1 class="fs-5 fw-bold lh-1 mb-3">The Global Semiconductor Supply Chain</h1>
+                    <p>This is no ordinary tower.</p>
+                    <p>Each <span class="fw-bold">layer</span> of this tower represents a <span class="fw-bold">country</span> in the global supply chain.</p>
+                    <p class="mb-0">The <span class="fw-bold">arrangement and number of blocks</span> in a layer are not random; they reflect that country's <span class="fw-bold">betweenness centrality</span>—how crucial its semiconductor companies are in connecting the world.</p>
+                    <!-- [images of High centrality | Moderately high | Moderate | Low centrality] -->
+                    <div class="col-12 d-flex my-2 fs-7 justify-content-between">
+                        <div class="col d-flex flex-column align-items-center">
+                            <img src="./imgs/brick_layout_1.svg" class="col-10">
+                            <div>Low centrality</div>
+                        </div>
+                        <div class="col d-flex flex-column align-items-center">
+                            <img src="./imgs/brick_layout_2.svg" class="col-10">
+                            <div>Moderate</div>
+                        </div>
+                        <div class="col d-flex flex-column align-items-center">
+                            <img src="./imgs/brick_layout_3.svg" class="col-10">
+                            <div>Moderately high</div>
+                        </div>
+                        <div class="col d-flex flex-column align-items-center">
+                            <img src="./imgs/brick_layout_4.svg" class="col-10">
+                            <div>High centrality</div>
+                        </div>
+                    </div>
+                    <div class="col-12 d-flex mb-4 fs-7 justify-content-center" id="color-legend">
+                    </div>
+                    <p class="mb-0">More central means more structure—<br>but also more pressure.</p>
+                    <p class="mb-0 fw-bold">More bricks, more responsibility.</p>
+                    <p class="fw-bold">More responsibility, more risk.</p>
+                    <p class="mb-0">You can reorder the tower:</p>
+                    <p class="mb-0">By <span class="fw-bold">number of companies</span> involved in the supply chain,</p>
+                    <p>or by <span class="fw-bold">PageRank</span>—how authoritative they are online.</p>
+                    <div class="col-12 d-flex mt-2 mb-4 fs-7 lh-1 justify-content-between">
+                        <div class="col d-flex">
+                            <img src="./imgs/tower_sort.svg" class="col-5">
+                            <div class="d-flex flex-column justify-content-between">
+                                <div>fewer<br>companies</div>
+                            </div>
+                        </div>
+                        <div class="col d-flex">
+                            <img src="./imgs/tower_sort.svg" class="col-5">
+                            <div class="d-flex flex-column justify-content-between">
+                                <div>lower<br>rank</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="mb-0">Each sort reveals new fragilities.</p>
+                    <p>New insights. New risks.</p>
+                    <!-- [animations of two metrics] -->
+                    <p class="mb-0 fw-bold">Which layer, if diminished or removed, will cause collapse?</p>
+                    <div class="col-12 d-flex mt-2 mb-4 justify-content-between">
+                        <div class="col-6 d-flex flex-column justify-content-center">
+                            <p class="mb-0"> Is it the large, bottom one?</p>
+                            <p>Or the small but central?</p>
+                        </div>
+                        <img src="./imgs/tower_collapse.svg" class="col-5">
+                    </div>
+                    <p class="mb-0">This is the hidden geometry of globalization.</p>
+                    <p class="mb-0">A balance of power, precision, and vulnerability.</p>
+                    <p>And at its core: the <span class="fw-bold">semiconductor</span>.</p>
+                    <div class="border-top py-2 mt-5"></div>
+                    <p class="fw-bold fs-7 mb-0">Credits</p>
+                    <p class="fs-7">The initial concept of the Block Tower model was developed by <span class="fst-italic">Jonathan Martin</span>, <span class="fst-italic">Julia Bauzá Martinez</span>, <span class="fst-italic">Maria Jemimah Margallo</span>, and <span class="fst-italic">Daniel Malzl</span> as part of a hands-on project during the <a class="fst-italic" href="https://vis.csh.ac.at/vis-workshop-2024/" target="_blank">Visualizing Complexity Science Workshop 2024</a>, focused on the global semiconductor supply chain, presented by <span class="fst-italic">Dr. Elma Hot Dervic</span>. Following the workshop, artist <span class="fst-italic">Jonas Bohatsch</span> and organizer <span class="fst-italic">Liuhuaying Yang</span> collaborated with <span class="fst-italic">Jonathan Martin</span>, <span class="fst-italic">Julia Bauzá Martinez</span>, <span class="fst-italic">Maria Jemimah Margallo</span>, and <span class="fst-italic">Dr. Elma Hot Dervic</span> to refine and implement the project.</p>
+                    </p>
                 </div>
             </div>
         </div>

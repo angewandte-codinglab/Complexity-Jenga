@@ -48,6 +48,9 @@ function init() {
     const aboutModal = document.getElementById('about-modal');
     aboutModal.addEventListener('show.bs.modal', function() {
         //to fill if needed
+        d3.select('#color-legend').selectAll('.color-legend').data(state.colorScale.domain())
+            .join('div').attr('class', 'color-legend me-2 d-flex align-items-center')
+            .html(d => `<span class="me-1" style="background-color:${state.colorScale(d)}"></span>${d}`)
     });
 
 
