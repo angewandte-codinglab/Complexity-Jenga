@@ -22,7 +22,8 @@ export function initGUI() {
     setupLightsGUI();
     
     // Create Material Controls folder 
-    setupMaterialGUI();
+    // setupMaterialGUI();
+    gui.hide();
 }
 
 function setupToneMappingGUI() {

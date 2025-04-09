@@ -64,11 +64,11 @@ function animate() {
     const pos = state.camera.position;
     const rot = state.camera.rotation;
     const orb = state.orbitControls.target;
-    console.log(
-        `Camera Position: x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}, z: ${pos.z.toFixed(2)}`,
-        `\nRotation: x: ${rot.x.toFixed(2)}, y: ${rot.y.toFixed(2)}, z: ${rot.z.toFixed(2)}`,
-        `\nOrbit: x: ${orb.x.toFixed(2)}, y: ${orb.y.toFixed(2)}, z: ${orb.z.toFixed(2)}`
-    );
+    // console.log(
+    //     `Camera Position: x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}, z: ${pos.z.toFixed(2)}`,
+    //     `\nRotation: x: ${rot.x.toFixed(2)}, y: ${rot.y.toFixed(2)}, z: ${rot.z.toFixed(2)}`,
+    //     `\nOrbit: x: ${orb.x.toFixed(2)}, y: ${orb.y.toFixed(2)}, z: ${orb.z.toFixed(2)}`
+    // );
 
     render();
 

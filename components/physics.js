@@ -91,7 +91,7 @@ function createJengaTower() {
     // Load data and create blocks
     import('./data.js').then(module => {
         module.loadData().then(data => {
-            console.log(data);
+            // console.log(data);
             
             // Set up scale for determining the number of bricks per layer
             state.brick_layout.domain(d3.extent(data, d => d.mean_betweeness_centrality));
