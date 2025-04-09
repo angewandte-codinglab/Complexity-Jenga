@@ -12,84 +12,50 @@ export function initInput() {
 }
 
 let blockTouched = false;
+let lastHighlightedBlock = null;
 
 function setupInputHandlers() {
     // Mouse events
     document.addEventListener('mousedown', () => {
         state.timeDiv = 4;
     });
-
+    
     document.addEventListener('mouseup', () => {
         state.timeDiv = state.defaultTimeDiv;
     });
-
+    
     document.addEventListener('mousemove', onMouseMove);
-
+    
     // Keyboard events
     document.addEventListener('keydown', (event) => {
         if (event.key === " " || event.code === "Space") {
-            eventRecreateTower()
+            state.runPhysics = false;
+            removeAllBlocks();
+            createObjects();
         } else if (event.code === "Enter") {
-            toggleSimulation()
+            state.runPhysics = !state.runPhysics;
+            console.log("Physics running: " + state.runPhysics);
         } else if (event.code === "KeyM") {
-            state.controls.touches.ONE = (state.controls.touches.ONE === THREE.TOUCH.PAN) ?
-                THREE.TOUCH.ROTATE :
-                THREE.TOUCH.PAN;
+            state.controls.touches.ONE = (state.controls.touches.ONE === THREE.TOUCH.PAN) 
+            ? THREE.TOUCH.ROTATE 
+            : THREE.TOUCH.PAN;
         } else if (event.metaKey || event.ctrlKey) {
-            enableBrickmoving(true)
-        }
-    });
-
-    document.addEventListener('keyup', (event) => {
-        // console.log(event)
-        if (event.key === 'Control' || event.key === 'Meta') {
-            enableBrickmoving(false)
-        }
-    });
-    //button events
-    document.getElementById('btn-recreate').addEventListener('click', function(event) {
-        eventRecreateTower()
-    })
-    document.getElementById('btn-togglesimulation').addEventListener('click', function(event) {
-        toggleSimulation()
-
-        const clickedButton = event.currentTarget;
-        // Toggle the 'enable' class on the button
-        clickedButton.classList.toggle('enable');
-    })
-    document.getElementById('btn-brickmoving').addEventListener('click', function(event) {
-        const clickedButton = event.currentTarget;
-        // Toggle the 'enable' class on the button
-        clickedButton.classList.toggle('enable');
-
-        enableBrickmoving(clickedButton.classList.contains('enable'))
-
-    })
-
-    function eventRecreateTower() {
-        state.runPhysics = false;
-        removeAllBlocks();
-        createObjects();
-    }
-
-    function toggleSimulation(){
-        state.runPhysics = !state.runPhysics;
-        console.log("Physics running: " + state.runPhysics);
-    }
-
-    function enableBrickmoving(enable) {
-        if (enable) {
             console.log("Block moving enabled");
             state.runPhysics = false;
             state.dragControls.enabled = true;
             state.orbitControls.enabled = false;
-        } else {
+        }
+    });
+    
+    document.addEventListener('keyup', (event) => {
+        // console.log(event)
+        if (event.key === 'Control' || event.key === 'Meta') {
             console.log("Orbit enabled");
             if (blockTouched) state.runPhysics = !state.runPhysics;
             state.orbitControls.enabled = true;
             state.dragControls.enabled = false;
         }
-    }
+    });
 }
 
 function setupViewDropdown() {
@@ -97,14 +63,14 @@ function setupViewDropdown() {
         { id: "number_of_companies", name: 'Number of Companies' },
         { id: "mean_page_rank", name: 'Page Rank' }
     ];
-
+    
     state.currentView = viewOptions[0];
-
+    
     createDropdown(
-        state.viewContainer,
-        "view-dropdown",
-        viewOptions,
-        state.currentView,
+        state.viewContainer, 
+        "view-dropdown", 
+        viewOptions, 
+        state.currentView, 
         (selected) => {
             state.currentView = selected;
             state.runPhysics = false;
@@ -117,40 +83,40 @@ function setupViewDropdown() {
 
 function setupDragControls() {
     state.dragControls = new DragControls(state.objects, state.camera, state.renderer.domElement);
-
+    
     state.dragControls.addEventListener('dragend', function(event) {
         const object = event.object;
         const physicsBody = object.userData.physicsBody;
-
+        
         if (physicsBody) {
             const transform = new Ammo.btTransform();
             transform.setIdentity();
-
+            
             // Set the new position
             const position = object.position;
             transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-
+            
             // Set the new orientation
             const quaternion = object.quaternion;
             transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
-
+            
             // Update both the rigid body's world transform and its motion state
             physicsBody.setWorldTransform(transform);
-
+            
             if (physicsBody.getMotionState()) {
                 physicsBody.getMotionState().setWorldTransform(transform);
             }
-
+            
             // Activate the body so it doesn't remain sleeping
             physicsBody.activate();
-
+            
             // Clear the velocity to avoid unexpected movement after dragging
             physicsBody.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
             physicsBody.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
         }
         blockTouched = false;
     });
-
+    
     // Initially disable drag controls
     state.dragControls.enabled = false;
 }
@@ -159,14 +125,35 @@ function onMouseMove(event) {
     // Calculate normalized mouse position
     state.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     state.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
+    
     // Perform raycasting
     state.raycaster.setFromCamera(state.mouse, state.camera);
     const intersects = state.raycaster.intersectObjects(state.rigidBodies);
-
+    
+    // Reset previous highlighted block if exists
+    if (lastHighlightedBlock) {
+        resetBlockHighlight(lastHighlightedBlock);
+        lastHighlightedBlock = null;
+    }
+    
     // Check if any block is intersected
     if (intersects.length > 0) {
         const intersectedBlock = intersects[0].object;
+        
+        // Store original material properties if first time highlighting
+        if (!intersectedBlock.userData.hasOwnProperty('originalEmissive')) {
+            // Clone the color object instead of just storing the hex value
+            intersectedBlock.userData.originalEmissive = intersectedBlock.material.emissive.clone();
+            intersectedBlock.userData.originalEmissiveIntensity = intersectedBlock.material.emissiveIntensity;
+        }
+        
+        // Apply highlighting effect
+        intersectedBlock.material.emissive.set(0xFFFFFF);
+        intersectedBlock.material.emissiveIntensity = 0.3;
+        
+        // Track this block as the currently highlighted one
+        lastHighlightedBlock = intersectedBlock;
+        
         showBlockInfo(intersectedBlock, event);
         blockTouched = true;
     } else {
@@ -197,4 +184,12 @@ function showBlockInfo(block, event) {
 function hideBlockInfo() {
     const hoverBox = document.getElementById('hoverBox');
     hoverBox.style.display = 'none';
+}
+
+function resetBlockHighlight(block) {
+    if (block && block.userData.hasOwnProperty('originalEmissive')) {
+        // Use the clone of the original color instead of just the hex value
+        block.material.emissive.copy(block.userData.originalEmissive);
+        block.material.emissiveIntensity = block.userData.originalEmissiveIntensity || 0;
+    }
 }
