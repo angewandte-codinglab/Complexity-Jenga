@@ -91,19 +91,23 @@ function createJengaTower() {
     // Load data and create blocks
     import('./data.js').then(module => {
         module.loadData().then(data => {
-            // console.log(data);
+            const results = data.results; // ← FIX: extract results array
+            
+            // console.log(results);
             
             // Set up scale for determining the number of bricks per layer
-            state.brick_layout.domain(d3.extent(data, d => d.mean_betweeness_centrality));
+            state.brick_layout.domain(d3.extent(results, d => d.mean_betweeness_centrality));
             
             // Sort data based on current view
             console.log(state.currentView.id);
-            data.sort((a, b) => b[state.currentView.id] - a[state.currentView.id]);
+            results.sort((a, b) => b[state.currentView.id] - a[state.currentView.id]);
             
             // Limit to only the first N data entries if desired
             const limitLayers = false;
             if (limitLayers) {
-                data = data.slice(0, 20);
+                data = results.slice(0, 20);
+            } else {
+                data = results;
             }
             
             createBlocksFromData(data, brickMass, brickLength, brickDepth, brickHeight, heightOffset);

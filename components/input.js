@@ -3,6 +3,7 @@ import { DragControls } from 'three/addons/DragControls.js';
 // import * as d3 from 'd3';
 import { state } from './state.js';
 import { removeAllBlocks, createObjects } from './physics.js';
+
 // Dropdown functions in Dropdown.js
 
 export function initInput() {
@@ -163,7 +164,6 @@ function onMouseMove(event) {
         hideBlockInfo();
     }
 }
-
 function showBlockInfo(block, event) {
     const hoverBox = document.getElementById('hoverBox');
     hoverBox.style.display = 'flex';
@@ -175,12 +175,13 @@ function showBlockInfo(block, event) {
         <div class="subtitle">
             This country contains ${block.userData.companies} companies, connected to the global network with an average betweenness centrality of ${block.userData.centrality.toFixed(4)} and based on an average PageRank of ${d3.format(".4f")(block.userData.pagerank)}. Further details are displayed below.
         </div>
-        <div id="infographicBox">
-            Add infographics here (bricklayout ${block.userData.brickLayoutPerLayer})
-        </div>
+        <div id="infographicBox", ></div>
     `;
     hoverBox.style.top = `${event.clientY}px`;
     hoverBox.style.left = `${event.clientX + 15}px`;
+
+    // Draw the network graph for the hovered country
+    loadGlobalNetworkGraph('infographicBox', block.userData.countryCode);
 }
 
 function hideBlockInfo() {
