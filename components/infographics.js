@@ -1,206 +1,297 @@
-
 import { state } from './state.js';
-import { loadData } from './data.js';
+// import { loadData } from './data.js';
 import { removeAllBlocks, createObjects } from './physics.js';
 
-export function loadGlobalNetworkGraph(containerId) {
-  const container = d3.select(`#${containerId}`);
-  container.selectAll('*').remove();
-	loadData().then(({ links }) => {
-	// Aggregate bidirectional links into link value
-	  const linkMap = new Map();
-	  links.forEach(d => {
-		const key = d.source < d.target
-		  ? `${d.source}|${d.target}`
-		  : `${d.target}|${d.source}`;
+export function loadGlobalNetworkGraph(containerId, countryCode) {
+    const container = d3.select(`#${containerId}`);
+    // console.log(countryCode, state.datasets, container.node());
 
-		if (!linkMap.has(key)) {
-		  linkMap.set(key, {
-			source: d.source < d.target ? d.source : d.target,
-			target: d.source < d.target ? d.target : d.source,
-			value: 0,
-			source_macro_region: d.source_macro_region,
-			target_macro_region: d.target_macro_region,
-		  });
-		}
-		linkMap.get(key).value += d.value;
-	  });
-	links = Array.from(linkMap.values());
-
-
-    const containerNode = container.node();
-    const width = containerNode.getBoundingClientRect().width;
-    const height = 500;
-
-    const svg = container.append('svg')
-      .attr('viewBox', `0 0 ${width} ${height}`)
-      .attr('preserveAspectRatio', 'xMidYMid meet')
-      .style('width', `${width}px`)
-      .style('height', `${height}px`);
-
-    // Create nodes from links
-    const nodesMap = new Map();
-    links.forEach(link => {
-      if (!nodesMap.has(link.source)) {
-        nodesMap.set(link.source, {
-          id: link.source,
-          region: link.source_macro_region || 'Other'
-        });
-      }
-      if (!nodesMap.has(link.target)) {
-        nodesMap.set(link.target, {
-          id: link.target,
-          region: link.target_macro_region || 'Other'
-        });
-      }
-    });
-    let nodes = Array.from(nodesMap.values());
-
-    // Scales
-    const valueExtent = d3.extent(links, d => d.value);
-    const thicknessScale = d3.scaleLinear().domain(valueExtent).range([0.5, 8]);
-    const opacityScale = d3.scaleLinear().domain(valueExtent).range([0.2, 1]);
-
-    // First simulation
-    const simulation = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(links).id(d => d.id).distance(100))
-      .force('charge', d3.forceManyBody().strength(-180))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(24));
-
-    const link = svg.append('g')
-      .attr('stroke-linecap', 'round')
-      .selectAll('line')
-      .data(links)
-      .join('line')
-      .attr('stroke-width', d => thicknessScale(d.value))
-      .attr('stroke-opacity', d => opacityScale(d.value))
-      .attr('stroke', d =>
-        d.source === 'US' || d.source.id === 'US' || d.target === 'US' || d.target.id === 'US'
-          ? 'red'
-          : 'black'
-      );
-
-    const node = svg.append('g')
-      .selectAll('circle')
-      .data(nodes)
-      .join('circle')
-      .attr('r', d => d.id === 'US' ? 12 : 8)
-      .attr('stroke', 'black')
-      .attr('stroke-width', 1.2)
-      .attr('fill', d => state.colorScale(d.region || 'Other'))
-      .call(drag(simulation));
-
-    const label = svg.append('g')
-      .selectAll('text')
-      .data(nodes)
-      .join('text')
-      .text(d => d.id)
-      .attr('font-size', 9)
-      .attr('fill', '#000')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.3em')
-      .attr('pointer-events', 'none');
-
-    simulation.on('tick', () => {
-      link
-        .attr('x1', d => d.source.x)
-        .attr('y1', d => d.source.y)
-        .attr('x2', d => d.target.x)
-        .attr('y2', d => d.target.y);
-
-      node
-        .attr('cx', d => d.x)
-        .attr('cy', d => d.y);
-
-      label
-        .attr('x', d => d.x)
-        .attr('y', d => d.y);
-    });
-
-    // After 4s, remove US + its links and redraw
-    setTimeout(() => {
-      const remainingNodes = nodes.filter(n => n.id !== 'US');
-
-      // Filter out links connected to US
-      const remainingLinks = links.filter(
-        d =>
-          (typeof d.source === 'string' ? d.source !== 'US' : d.source.id !== 'US') &&
-          (typeof d.target === 'string' ? d.target !== 'US' : d.target.id !== 'US')
-      );
-
-      simulation.stop();
-      svg.selectAll('*').remove();
-
-      const sim2 = d3.forceSimulation(remainingNodes)
-        .force('link', d3.forceLink(remainingLinks).id(d => d.id).distance(100))
-        .force('charge', d3.forceManyBody().strength(-180))
-        .force('center', d3.forceCenter(width / 2, height / 2))
-        .force('collision', d3.forceCollide().radius(24));
-
-      const link2 = svg.append('g')
-        .attr('stroke', 'black')
-        .selectAll('line')
-        .data(remainingLinks)
-        .join('line')
-        .attr('stroke-width', d => thicknessScale(d.value))
-        .attr('stroke-opacity', d => opacityScale(d.value));
-
-      const node2 = svg.append('g')
-        .selectAll('circle')
-        .data(remainingNodes)
-        .join('circle')
-        .attr('r', 8)
-        .attr('stroke', 'black')
-        .attr('stroke-width', 1.2)
-        .attr('fill', d => state.colorScale(d.region || 'Other'))
-        .call(drag(sim2));
-
-      const label2 = svg.append('g')
-        .selectAll('text')
-        .data(remainingNodes)
-        .join('text')
-        .text(d => d.id)
-        .attr('font-size', 9)
-        .attr('fill', '#000')
-        .attr('text-anchor', 'middle')
-        .attr('dy', '0.3em')
-        .attr('pointer-events', 'none');
-
-      sim2.on('tick', () => {
-        link2
-          .attr('x1', d => d.source.x)
-          .attr('y1', d => d.source.y)
-          .attr('x2', d => d.target.x)
-          .attr('y2', d => d.target.y);
-
-        node2
-          .attr('cx', d => d.x)
-          .attr('cy', d => d.y);
-
-        label2
-          .attr('x', d => d.x)
-          .attr('y', d => d.y);
-      });
-    }, 4000);
-  });
+    networkGraph(container, { nodes: state.datasets.results, links: state.datasets.links })(countryCode)
 }
 
-function drag(simulation) {
-  return d3.drag()
-    .on('start', (event, d) => {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
+function networkGraph(_, data) {
+    const node = _;
+    let _width = null;
+    let _height = null;
+
+    const update = {};
+
+    const fakeNodes = [],
+        nodeXY = {};
+    const count = data.nodes.length;
+    const maxR = 6;
+    const [h, w] = [maxR * 35, count * maxR]
+    const xy = { x: -w / 2, y: -h / 2 }
+    const _count = h * w / maxR / maxR;
+    for (let i = 0; i < (_count); i++) {
+        const d = { x: xy.x, y: xy.y, used: false };
+        nodeXY[i] = d;
+        fakeNodes.push(d)
+
+        xy.x += maxR;
+        if (xy.x >= (w / 2 - maxR)) {
+            xy.x = -w / 2;
+            xy.y += maxR;
+        }
+    }
+
+    const edgeThres = 1000;
+
+    const distanceStrength = d3.scaleLinear()
+        .range([70, 10])
+
+    const lWidth = d3.scaleQuantize()
+        .range([1, 4, 7, 10])
+        .domain(d3.extent(data.links, d => d.value))
+
+    data.links.forEach(d => {
+        d.width = lWidth(d.value)
     })
-    .on('drag', (event, d) => {
-      d.fx = event.x;
-      d.fy = event.y;
-    })
-    .on('end', (event, d) => {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
-    });
+
+    const rSize = d3.scaleQuantize()
+        .range([4, 6, 8, 10])
+        .domain(d3.extent(data.nodes, d => d.mean_betweeness_centrality));
+
+
+    const svg = node.selectAll('.canvas').data([0])
+        .join('svg').attr('class', 'canvas')
+        .attr('xmlns', "http://www.w3.org/2000/svg")
+        .attr('width', '100%').attr('height', '100%')
+    const landscape = svg.selectAll('.landscape').data([0]).join('g')
+        .attr('class', 'landscape')
+
+    // landscape.selectAll('.bg').data([0]).join('rect')
+    //     .attr('class', 'bg')
+    //     .attr('x', -w / 2).attr('y', -h / 2)
+    //     .attr('width', w).attr('height', h)
+    //     // .attr('fill', '#e6e6e6')
+    //     .attr('fill', '#000')
+
+    const alllinks = landscape.selectAll('.alllinks').data([0]).join('g')
+        .attr('class', 'alllinks')
+
+    const allnodes = landscape.selectAll('.allnodes').data([0]).join('g')
+        .attr('class', 'allnodes')
+
+    function updateViz(iso_hl) {
+
+        const [view_w, view_h] = [_width || node.node().clientWidth, _height || node.node().clientHeight];
+
+
+        data.links_layout = data.links.filter(d => d.value > edgeThres)
+
+        const kept = new Set(data.links_layout.map(d => d._id));
+
+        data.nodes.forEach(d => {
+            // d.color = state.colorScale(d.sub_region)
+            d.rScale = d3.scaleQuantize().range([4, 6, 8, 10]).domain(d3.extent(d.edges, e => e.value));
+
+            d.r = rSize(d.mean_betweeness_centrality);
+            d._r = d.r;
+
+            // d.x = box.x + box.width/2;
+            // d.y = box.y + box.height/2;
+            const hasLink = data.links_layout.some(l => l.source === d.id || l.target === d.id);
+            if (!hasLink) {
+                let best = null;
+                d.edges.forEach(link => {
+                    if (!best || link.value > best.value) {
+                        best = link;
+                    }
+                });
+
+                if (best && !kept.has(best._id)) {
+                    data.links_layout.push(best);
+                    kept.add(best._id);
+                }
+            }
+            nodeXY[d.id] = d;
+        })
+
+        distanceStrength.domain(d3.extent(data.links_layout, d => d.value))
+
+        data.links_layout.forEach(d => {
+
+            d.strength = distanceStrength(d.value)
+        })
+
+        const links = alllinks.selectAll('.link').data(data.links)
+            .join('g').attr('class', d => `links`)
+
+        const link = links.selectAll('.link').data(d => [d])
+            .join('path').attr('class', 'link')
+            .attr('fill', 'none')
+            .attr('stroke-linejoin', 'round')
+            .attr('stroke', '#ebeced')
+            .attr('stroke-width', 0.2)
+            .attr('stroke-opacity', 0.1)
+
+
+        const items = alllinks.selectAll('.items').data(data.nodes)
+            .join('g').attr('class', d => `items`)
+
+        const item = items.selectAll('.item').data(d => [d])
+            .join('path').attr('class', 'item')
+            .attr('fill', d => d.color)
+            .attr('d', d => `M${-d.r} ${-d.r} h${d.r*2} v${d.r*2} h${-d.r*2} z`)
+            .attr('stroke', '#000')
+            .attr('stroke-width', 1)
+            .attr('stroke-opacity', 0.5)
+
+        const label = items.selectAll('.item-text').data(d => [d])
+            .join('text').attr('class', 'item-text')
+            .text(d => d.country_iso_code)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', d => d.r * 0.8)
+            .attr('y', d => d.r * 0.8 * 0.4)
+            .attr('font-weight', 'bold')
+
+
+        // console.log(nodeXY)
+        const forceNode = d3.forceCollide()
+            .radius(d => d.r * 2)
+
+        const forceLink = d3.forceLink(data.links_layout).id(d => d.id)
+            // .iterations(1)
+            // .strength(0.2)
+            .distance(d => d.strength)
+        const forceBody = d3.forceManyBody()
+            .distanceMax(Math.min(w, h))
+
+        const forceY = d3.forceY(h / 2)
+            .strength(0.2)
+
+        const simulation = d3.forceSimulation(data.nodes)
+            .alphaTarget(0.4)
+            .alphaDecay(0.1)
+            .alphaMin(0.5)
+            .force("link", forceLink)
+            .force("charge", forceNode)
+            .force('body', forceBody)
+            .force('y', forceY)
+            .force("center", d3.forceCenter())
+            .on('tick', function() {
+                items.attr("transform", d => {
+                    nodeXY[d.id] = d;
+                    return `translate(${d.x},${d.y})`;
+                })
+                link
+                    .attr('d', d => {
+                        if (d.source.x === undefined) {
+                            d.source = nodeXY[d.source];
+                            d.target = nodeXY[d.target];
+                        }
+
+                        return `M${d.source.x} ${d.source.y} L${(d.source.x + d.target.x)/2} ${d.source.y} L${(d.source.x + d.target.x)/2} ${d.target.y} L${d.target.x} ${d.target.y}`
+                    })
+                const box = landscape.node().getBBox();
+                svg.attr('viewBox', `${box.x - 10} ${box.y - 10} ${box.width + 20} ${box.height + 20}`)
+            })
+            .on('end', function() {
+
+                data.nodes.forEach((d, i) => {
+
+                    let closest = null;
+                    let minDist = Infinity;
+                    for (const e in nodeXY) {
+                        const pos = nodeXY[e]
+                        if (pos.used) continue;
+                        const dx = d.x - pos.x;
+                        const dy = d.y - pos.y;
+                        const dist = dx * dx + dy * dy; // square distance
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closest = pos;
+                        }
+                    }
+
+                    if (closest) {
+                        // Assign position
+                        d.x = closest.x;
+                        d.y = closest.y;
+                        closest.used = true;
+                    }
+                    nodeXY[d.id] = d;
+                })
+                // console.log(nodeXY)
+                items.transition().duration(200)
+                    .attr("transform", d => `translate(${d.x},${d.y})`)
+                link.transition().duration(200)
+                    .attr('d', d => {
+                        if (d.source.x === undefined) {
+                            d.source = nodeXY[d.source];
+                            d.target = nodeXY[d.target];
+                        }
+
+                        return `M${d.source.x} ${d.source.y} L${(d.source.x + d.target.x)/2} ${d.source.y} L${(d.source.x + d.target.x)/2} ${d.target.y} L${d.target.x} ${d.target.y}`
+                    })
+                    .attr('stroke-dasharray', function(d) {
+                        d._length = this.getTotalLength();
+                        return d._length; // total path length
+                    })
+                    .attr('stroke-dashoffset', 0)
+
+                if (iso_hl) update.highlight(iso_hl)
+
+            })
+
+
+        update.highlight = (iso) => {
+            const nodeData = nodeXY[iso]
+            const color = nodeData.color;
+            const rScale = nodeData.rScale;
+            const edgeValue_lookup = {};
+            nodeData.edges.forEach(d => {
+                if (d.source === iso) {
+                    edgeValue_lookup[d.target] = d.value;
+                } else {
+                    edgeValue_lookup[d.source] = d.value;
+                }
+            })
+
+            items.attr('opacity', d => {
+                d._r = rScale(edgeValue_lookup[d.id]) || d._r;
+                return (d.id === iso) || (d.allNeighbors.has(iso) ? 1 : 0);
+            })
+
+            let toggle = true;
+            d3.interval(() => {
+
+                item.transition()
+                    .duration(400).delay(toggle ? 0 : 1000)
+                    .ease(d3.easeCubic)
+                    .attr('d', d => {
+
+                        return toggle ? `M${-d._r} ${-d._r} h${d._r * 2} v${d._r * 2} h${-d._r * 2} z` : `M${-d.r} ${-d.r} h${d.r * 2} v${d.r * 2} h${-d.r * 2} z`;
+                    })
+                  .attr('transform', d => toggle && d.id === iso ? 'rotate(45) scale(2)' : 'rotate(0) scale(1)')
+              
+
+                label.transition()
+                    .duration(400).delay(toggle ? 0 : 1000)
+                    .ease(d3.easeCubic)
+                    .attr('font-size', d => (toggle ? d._r : d.r) * 0.8)
+                    .attr('y', d => (toggle ? d._r : d.r) * 0.8 * 0.4)
+                    .attr('transform', d => toggle && d.id === iso ? 'scale(2)' : 'scale(1)');
+
+                const link_hl = link.filter(d => [d.source.id, d.target.id].includes(iso))
+                link_hl.transition()
+                    .duration(0).delay(toggle ? 0 : 1000)
+                    .attr('stroke-width', d => toggle ? d.width : 0.2)
+                    .attr('stroke-opacity', d => toggle ? 0.2 : 0.1)
+                    .attr('stroke', d => toggle ? color : '#ebeced');
+                link_hl.transition()
+                    .duration(1000).delay(toggle ? 0 : 1000)
+                    .ease(d3.easeLinear)
+                    .attr('stroke-dashoffset', d => toggle ? 0 : d._length);
+
+
+                toggle = !toggle;
+            }, 3000); // runs every 1800ms
+
+        }
+        return update;
+    }
+    return updateViz;
+
 }
-	

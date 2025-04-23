@@ -91,6 +91,8 @@ function createJengaTower() {
     // Load data and create blocks
     import('./data.js').then(module => {
         module.loadData().then(data => {
+            state.datasets = data; //store data
+
             const results = data.results; // ← FIX: extract results array
             
             // console.log(results);
@@ -164,6 +166,7 @@ function createBlocksFromData(data, brickMass, brickLength, brickDepth, brickHei
                 brick.userData.pagerank = d.mean_page_rank;
                 brick.userData.color = d.color;
                 brick.userData.brickLayoutPerLayer = brickLayoutPerLayer;
+                brick.userData.countryCode = d.country_iso_code;
                 
                 state.objects.push(brick);
             }

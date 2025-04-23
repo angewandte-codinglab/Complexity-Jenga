@@ -1,45 +1,42 @@
 //import * as d3 from 'd3';
 
 export function loadData() {
-  return Promise.all([
-    d3.csv('./data/results_semicon.csv', parse),
-    d3.csv('./data/semicon_source_target_country.csv', parseNetwork)
-  ]).then(([results, links]) => {
-    // Create a lookup map from country_iso_code to region info
-    const regionMap = new Map(
-      results.map(d => [
-        d.country_iso_code,
-        {
-          macro_region: d.macro_region,
-          sub_region: d.sub_region
-        }
-      ])
-    );
+    return Promise.all([
+        d3.csv('./data/results_semicon.csv', parse),
+        d3.csv('./data/semicon_source_target_country.csv', parseNetwork)
+    ]).then(([results, links]) => {
 
-    // Enrich links with region metadata
-    links.forEach(d => {
-      const src = regionMap.get(d.source) || {};
-      const tgt = regionMap.get(d.target) || {};
+        const nodes_lookup = {};
+        
+        links.forEach(d => {
+            if (!nodes_lookup[d.source]) nodes_lookup[d.source] = { allNeighbors: new Set(), edges: [] };
+            if (!nodes_lookup[d.target]) nodes_lookup[d.target] = { allNeighbors: new Set(), edges: [] };
 
-      d.source_macro_region = src.macro_region || null;
-      d.source_sub_region = src.sub_region || null;
+            d.strength = 150;
 
-      d.target_macro_region = tgt.macro_region || null;
-      d.target_sub_region = tgt.sub_region || null;
+            nodes_lookup[d.source].allNeighbors.add(d.target)
+            nodes_lookup[d.source].edges.push(Object.assign({}, d))
+            nodes_lookup[d.target].allNeighbors.add(d.source)
+            nodes_lookup[d.target].edges.push(Object.assign({}, d))
+        })
+        results.forEach(d => {
+            nodes_lookup[d.country_iso_code] = Object.assign(d, nodes_lookup[d.country_iso_code])
+        })
+
+        return { results, links,nodes_lookup };
     });
-
-    return { results, links };
-  });
 }
 
 function parse(d) {
-  d.number_of_companies = +d.number_of_companies;
-  d.mean_betweeness_centrality = +d.mean_betweeness_centrality;
-  d.mean_page_rank = +d.mean_page_rank;
-  return d;
+    d.id = d.country_iso_code;
+    d.number_of_companies = +d.number_of_companies;
+    d.mean_betweeness_centrality = +d.mean_betweeness_centrality;
+    d.mean_page_rank = +d.mean_page_rank;
+    return d;
 }
 
 function parseNetwork(d) {
-  d.value = +d.value;
-  return d;
+    d._id = `${d.source}-${d.target}`;
+    d.value = +d.value;
+    return d;
 }
