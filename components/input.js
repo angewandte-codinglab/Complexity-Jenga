@@ -44,6 +44,33 @@ function setupInputHandlers() {
             state.runPhysics = false;
             state.dragControls.enabled = true;
             state.orbitControls.enabled = false;
+        } 
+        // Camera position shortcuts (numbers 1-9)
+        else if (!isNaN(parseInt(event.key)) && event.key !== '0') {
+            const keyNum = parseInt(event.key);
+            const presetNames = Object.keys(state.cameraPresets);
+            
+            // Check if we have enough presets for this number
+            if (keyNum <= presetNames.length) {
+                // Get preset name (subtract 1 because arrays are 0-indexed)
+                const presetName = presetNames[keyNum - 1];
+                
+                // Import the function from gui.js for animation
+                import('./gui.js').then(module => {
+                    // Animate to selected preset with 1000ms duration
+                    module.animateCameraToPreset(presetName, 1000);
+                });
+            }
+        }
+        // Toggle GUI visibility with 'h' key
+        else if (event.key === 'h' || event.key === 'H') {
+            if (state.gui) {
+                if (state.gui.domElement.style.display === 'none') {
+                    state.gui.domElement.style.display = '';
+                } else {
+                    state.gui.domElement.style.display = 'none';
+                }
+            }
         }
     });
     
@@ -114,7 +141,7 @@ function setupDragControls() {
             physicsBody.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
             physicsBody.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
         }
-        blockTouched = false;
+        // blockTouched = false;
     });
     
     // Initially disable drag controls
