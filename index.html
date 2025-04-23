@@ -52,7 +52,7 @@
         <div id="btns-about" class="col-12 d-flex align-items-center position-absolute">
             <button type="button" class="btn btn-sm btn-light fw-bold" data-bs-toggle="modal" data-bs-target="#legend-modal" id="btn-legend">Legend</button>
             <button type="button" class="btn btn-sm btn-light fw-bold ms-2" data-bs-toggle="modal" data-bs-target="#about-modal" id="btn-about">About</button>
-        </div>
+		</div>
         <div id="container" class="position-relative">
             <div id="hoverBox"></div>
         </div>
@@ -146,14 +146,15 @@
                     <p>Some countries are more central and critical than others, acting as hubs or essential pathways through which many connections pass.</p>
                     <p>To decide which countries are critical players in this network, we explored 2 importance measures: </p>
                     <div class="btn-group btn-group-sm" role="group" aria-label="view example">
-                        <button type="button" class="btn btn-sm enable" data-name="centrality" onclick="showGraph('centrality')">Betweenness Centrality</button>
-                        <button type="button" class="btn btn-sm" data-name="pagerank" onclick="showGraph('pagerank')">PageRank</button>
+                        <button type="button" class="btn btn-sm enable" data-name="centrality" >Betweenness Centrality</button>
+                        <button type="button" class="btn btn-sm" data-name="pagerank" >PageRank</button>
                     </div>
                     <div id="legend-graph" style="width: 100%; height: 500px;"></div>
                 </div>
             </div>
         </div>
     </div>
+	
     <script src="./libs/ammo.wasm.js"></script>
     <script src="./libs/bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
     <script src="./libs/d3.v5.js"></script>

@@ -5,6 +5,8 @@ import { initPhysics, createObjects } from './physics.js';
 import { initInput } from './input.js';
 import { initGUI, applyCameraPreset } from './gui.js'; // Import the GUI
 import { loadCentralityGraph, loadPageRankGraph, loagTilesGraph } from './legend.js';
+import { loadGlobalNetworkGraph } from './infographics.js';
+
 
 
 // Initialize Ammo.js physics engine and start the application
@@ -102,3 +104,4 @@ function showGraph(type) {
 window.showGraph = showGraph;
 window.loadCentralityGraph = loadCentralityGraph;
 window.loadPageRankGraph = loadPageRankGraph;
+window.loadGlobalNetworkGraph = loadGlobalNetworkGraph;  

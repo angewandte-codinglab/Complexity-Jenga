@@ -3,6 +3,7 @@ import { DragControls } from 'three/addons/DragControls.js';
 // import * as d3 from 'd3';
 import { state } from './state.js';
 import { removeAllBlocks, createObjects } from './physics.js';
+
 // Dropdown functions in Dropdown.js
 
 export function initInput() {
@@ -22,16 +23,18 @@ function setupInputHandlers() {
     document.addEventListener('mousedown', () => {
         state.timeDiv = 4;
     });
-    
+
     document.addEventListener('mouseup', () => {
         state.timeDiv = state.defaultTimeDiv;
     });
-    
+
     document.addEventListener('mousemove', onMouseMove);
+
     
     // Store physics state before modifier key was pressed
     let previousPhysicsState = false;
     
+
     // Keyboard events
     document.addEventListener('keydown', (event) => {
         if (event.key === " " || event.code === "Space") {
@@ -42,9 +45,9 @@ function setupInputHandlers() {
             state.runPhysics = !state.runPhysics;
             console.log("Physics running: " + state.runPhysics);
         } else if (event.code === "KeyM") {
-            state.controls.touches.ONE = (state.controls.touches.ONE === THREE.TOUCH.PAN) 
-            ? THREE.TOUCH.ROTATE 
-            : THREE.TOUCH.PAN;
+            state.controls.touches.ONE = (state.controls.touches.ONE === THREE.TOUCH.PAN) ?
+                THREE.TOUCH.ROTATE :
+                THREE.TOUCH.PAN;
         } else if (event.metaKey || event.ctrlKey) {
             // Set flag that meta/ctrl is pressed
             metaKeyPressed = true;
@@ -93,7 +96,7 @@ function setupInputHandlers() {
             }
         }
     });
-    
+
     document.addEventListener('keyup', (event) => {
         if (event.key === 'Control' || event.key === 'Meta') {
             // Clear the meta/ctrl pressed flag
@@ -118,14 +121,14 @@ function setupViewDropdown() {
         { id: "number_of_companies", name: 'Number of Companies' },
         { id: "mean_page_rank", name: 'PageRank' }
     ];
-    
+
     state.currentView = viewOptions[0];
-    
+
     createDropdown(
-        state.viewContainer, 
-        "view-dropdown", 
-        viewOptions, 
-        state.currentView, 
+        state.viewContainer,
+        "view-dropdown",
+        viewOptions,
+        state.currentView,
         (selected) => {
             state.currentView = selected;
             state.runPhysics = false;
@@ -146,32 +149,33 @@ function setupDragControls() {
         state.runPhysics = false;
     });
     
+
     state.dragControls.addEventListener('dragend', function(event) {
         const object = event.object;
         const physicsBody = object.userData.physicsBody;
-        
+
         if (physicsBody) {
             const transform = new Ammo.btTransform();
             transform.setIdentity();
-            
+
             // Set the new position
             const position = object.position;
             transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-            
+
             // Set the new orientation
             const quaternion = object.quaternion;
             transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
-            
+
             // Update both the rigid body's world transform and its motion state
             physicsBody.setWorldTransform(transform);
-            
+
             if (physicsBody.getMotionState()) {
                 physicsBody.getMotionState().setWorldTransform(transform);
             }
-            
+
             // Activate the body so it doesn't remain sleeping
             physicsBody.activate();
-            
+
             // Clear the velocity to avoid unexpected movement after dragging
             physicsBody.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
             physicsBody.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
@@ -181,80 +185,89 @@ function setupDragControls() {
         // This lets blocks fall naturally after placement
         state.runPhysics = true;
     });
-    
+
     // Initially disable drag controls
     state.dragControls.enabled = false;
 }
 
 function onMouseMove(event) {
     //skip it if modal is on
-    if(document.querySelector('.modal.show'))return;
+    if (document.querySelector('.modal.show')) return;
     // Calculate normalized mouse position
     state.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     state.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    
+
     // Perform raycasting
     state.raycaster.setFromCamera(state.mouse, state.camera);
     const intersects = state.raycaster.intersectObjects(state.rigidBodies);
-    
+
     // Reset previous highlighted block if exists
     if (lastHighlightedBlock) {
         resetBlockHighlight(lastHighlightedBlock);
         lastHighlightedBlock = null;
     }
-    
+
     // Check if any block is intersected
     if (intersects.length > 0) {
         const intersectedBlock = intersects[0].object;
-        
+
         // Store original material properties if first time highlighting
         if (!intersectedBlock.userData.hasOwnProperty('originalEmissive')) {
             // Clone the color object instead of just storing the hex value
             intersectedBlock.userData.originalEmissive = intersectedBlock.material.emissive.clone();
             intersectedBlock.userData.originalEmissiveIntensity = intersectedBlock.material.emissiveIntensity;
         }
-        
+
         // Apply highlighting effect
         intersectedBlock.material.emissive.set(0xFFFFFF);
         intersectedBlock.material.emissiveIntensity = 0.3;
-        
+
         // Track this block as the currently highlighted one
         lastHighlightedBlock = intersectedBlock;
-        
+
         showBlockInfo(intersectedBlock, event);
         blockTouched = true;
     } else {
+
         // Add timeout before setting blockTouched to false
         setTimeout(() => {
             blockTouched = false;
         }, 200);
-        hideBlockInfo();
+        showBlockInfo();
+
     }
 }
 
 function showBlockInfo(block, event) {
     const hoverBox = document.getElementById('hoverBox');
-    hoverBox.style.display = 'flex';
-    hoverBox.innerHTML = `
-        <div class="title-container">
-            <span class="title">${block.userData.country}</span>
-            <span class="pill" style="border-color:${block.userData.color}">${block.userData.region}</span>
-        </div>
-        <div class="subtitle">
-            This country contains ${block.userData.companies} companies, connected to the global network with an average betweenness centrality of ${block.userData.centrality.toFixed(4)} and based on an average PageRank of ${d3.format(".4f")(block.userData.pagerank)}. Further details are displayed below.
-        </div>
-        <div id="infographicBox">
-            Add infographics here (bricklayout ${block.userData.brickLayoutPerLayer})
-        </div>
-    `;
-    hoverBox.style.top = `${event.clientY}px`;
-    hoverBox.style.left = `${event.clientX + 15}px`;
+    if (block) {
+        hoverBox.style.display = 'flex';
+        if (state.currentHover !== block.userData.countryCode) {
+
+            hoverBox.innerHTML = `
+                <div class="title-container">
+                    <span class="title">${block.userData.country}</span>
+                    <span class="pill" style="border-color:${block.userData.color}">${block.userData.region}</span>
+                </div>
+                <div class="subtitle">
+                    This country contains ${block.userData.companies} companies, connected to the global network with an average betweenness centrality of ${block.userData.centrality.toFixed(4)} and based on an average PageRank of ${d3.format(".4f")(block.userData.pagerank)}. Further details are displayed below.
+                </div>
+                <div id="infographicBox"></div>
+            `;
+            //TODO: aligh box
+            hoverBox.style.top = `${Math.min(event.clientY, document.body.clientHeight - 500)}px`;
+            hoverBox.style.left = `${event.clientX + 30}px`;
+
+            // Draw the network graph for the hovered country
+
+            state.currentHover = block.userData.countryCode;
+            loadGlobalNetworkGraph('infographicBox', state.currentHover);
+        }
+    } else {
+        hoverBox.style.display = 'none';
+    }
 }
 
-function hideBlockInfo() {
-    const hoverBox = document.getElementById('hoverBox');
-    hoverBox.style.display = 'none';
-}
 
 function resetBlockHighlight(block) {
     if (block && block.userData.hasOwnProperty('originalEmissive')) {
