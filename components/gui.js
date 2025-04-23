@@ -8,22 +8,118 @@ let gui;
 export function initGUI() {
     // Create the GUI
     gui = new GUI();
-
+    
     // Camera presets
     setupCameraGUI();
     
     // Create Tone Mapping folder
     setupToneMappingGUI();
-
+    
     // Create Physics Controls folder
     // setupPhysicsGUI();
-
+    
     // Add lights controls
     setupLightsGUI();
     
+    // Add animation on startup
+    setupCameraAnimation();
+    
     // Create Material Controls folder 
     // setupMaterialGUI();
-    // gui.hide();
+    
+    // Export GUI to state
+    state.gui = gui;
+    state.gui.domElement.style.display = 'none'; // Hide the GUI by default
+}
+
+// Setup camera animation on load
+function setupCameraAnimation() {
+    // Get preset names
+    const presetNames = Object.keys(state.cameraPresets);
+    
+    // Set initial camera to last preset
+    const lastPreset = presetNames[presetNames.length - 1]; // 'BottomUp'
+    applyCameraPreset(lastPreset);
+    
+    // Wait 500ms and then animate to a random preset
+    setTimeout(() => {
+        // Select a random preset different from the current one
+        let availablePresets = presetNames.filter(name => name !== lastPreset);
+        let randomPreset = availablePresets[Math.floor(Math.random() * availablePresets.length)];
+        
+        // Animate to the random preset
+        animateCameraToPreset(randomPreset, 2000); // 1.5 seconds animation
+    }, 500);
+}
+
+// Animate camera to a specific preset
+export function animateCameraToPreset(presetName, duration = 1500) {
+    const preset = state.cameraPresets[presetName];
+    if (!preset) return;
+
+    // Store starting positions
+    const startPos = state.camera.position.clone();
+    const startQuat = state.camera.quaternion.clone().normalize();
+    const startOrbit = state.orbitControls.target.clone();
+    
+    // Target positions
+    const targetPos = preset.position;
+    const targetEuler = new THREE.Euler().copy(preset.rotation).reorder('XYZ');
+    const targetQuat = new THREE.Quaternion().setFromEuler(targetEuler).normalize();
+    const targetOrbit = preset.orbit || new THREE.Vector3(0, 0, 0);
+
+    if (startQuat.dot(targetQuat) < 0) {
+    // Replace negate() with manual component negation
+    targetQuat.set(
+        -targetQuat.x,
+        -targetQuat.y,
+        -targetQuat.z,
+        -targetQuat.w
+    );
+}
+    
+    console.log('Animating camera to preset:', presetName);
+    console.log('From:', new THREE.Euler().setFromQuaternion(startQuat).toArray());
+    console.log('To:', new THREE.Euler().setFromQuaternion(targetQuat).toArray());
+
+    let startTime = null;
+    
+    function animate(currentTime) {
+        if (startTime === null) startTime = currentTime;
+        const elapsed = currentTime - startTime;
+        
+        if (elapsed < duration) {
+            const progress = 1 - Math.pow(1 - Math.min(elapsed / duration, 1.0), 3);
+            
+            // Interpolate position
+            state.camera.position.lerpVectors(startPos, targetPos, progress);
+            
+            // Interpolate rotation using quaternions only
+            state.camera.quaternion.copy(startQuat).slerp(targetQuat, progress);
+            
+            // Interpolate orbit controls target
+            state.orbitControls.target.lerpVectors(startOrbit, targetOrbit, progress);
+            state.orbitControls.update();
+            
+            requestAnimationFrame(animate);
+        }
+        // } else {
+        //     // Snap to final values
+        //     state.camera.position.copy(targetPos);
+        //     state.camera.quaternion.copy(targetQuat);
+        // }
+        
+        // state.orbitControls.target.copy(targetOrbit);
+        // state.orbitControls.update();
+        
+        state.currentPreset = presetName;
+        if (state.cameraSettings) {
+            state.cameraSettings.preset = presetName;
+            state.presetController.updateDisplay();
+        }
+    }
+    
+    requestAnimationFrame(animate);
 }
 
 function setupToneMappingGUI() {
@@ -44,38 +140,38 @@ function setupToneMappingGUI() {
         toneMapping: 'ACES Filmic',
         exposure: 1.0
     };
-
+    
     state.renderer.toneMapping = toneMappings[settings.toneMapping]
     
     // Add tone mapping controller
     toneMappingFolder.add(settings, 'toneMapping', Object.keys(toneMappings))
-        .name('Tone Mapping')
-        .onChange((value) => {
-            state.renderer.toneMapping = toneMappings[value];
-            
-            // Update all custom shader materials
-            state.rigidBodies.forEach(obj => {
-                if (obj.material && obj.material.uniforms && obj.material.uniforms.toneMapping) {
-                    obj.material.uniforms.toneMapping.value = toneMappings[value];
-                }
-            });
-            
-            state.renderer.needsUpdate = true;
+    .name('Tone Mapping')
+    .onChange((value) => {
+        state.renderer.toneMapping = toneMappings[value];
+        
+        // Update all custom shader materials
+        state.rigidBodies.forEach(obj => {
+            if (obj.material && obj.material.uniforms && obj.material.uniforms.toneMapping) {
+                obj.material.uniforms.toneMapping.value = toneMappings[value];
+            }
         });
+        
+        state.renderer.needsUpdate = true;
+    });
     
     // Add exposure controller
     toneMappingFolder.add(settings, 'exposure', 0, 2, 0.01)
-        .name('Exposure')
-        .onChange((value) => {
-            state.renderer.toneMappingExposure = value;
-            
-            // Update all custom shader materials
-            state.rigidBodies.forEach(obj => {
-                if (obj.material && obj.material.uniforms && obj.material.uniforms.toneMappingExposure) {
-                    obj.material.uniforms.toneMappingExposure.value = value;
-                }
-            });
+    .name('Exposure')
+    .onChange((value) => {
+        state.renderer.toneMappingExposure = value;
+        
+        // Update all custom shader materials
+        state.rigidBodies.forEach(obj => {
+            if (obj.material && obj.material.uniforms && obj.material.uniforms.toneMappingExposure) {
+                obj.material.uniforms.toneMappingExposure.value = value;
+            }
         });
+    });
     
     // toneMappingFolder.open();
 }
@@ -83,16 +179,16 @@ function setupPhysicsGUI() {
     const physicsFolder = gui.addFolder('Physics');
     
     physicsFolder.add(state, 'runPhysics')
-        .name('Run Simulation')
-        .onChange((value) => {
-            // Optional: Add additional logic when physics is toggled
-        });
-        
+    .name('Run Simulation')
+    .onChange((value) => {
+        // Optional: Add additional logic when physics is toggled
+    });
+    
     physicsFolder.add(state, 'timeDiv', 0.5, 10, 0.5)
-        .name('Time Division')
-        .onChange((value) => {
-            state.timeDiv = value;
-        });
+    .name('Time Division')
+    .onChange((value) => {
+        state.timeDiv = value;
+    });
     
     // physicsFolder.open();
 }
@@ -103,27 +199,27 @@ function setupMaterialGUI() {
     
     // Add thickness control for brick outlines
     materialFolder.add({ thickness: 1.0 }, 'thickness', 0.5, 5, 0.1)
-        .name('Outline Thickness')
-        .onChange((value) => {
-            // Update all existing materials
-            state.rigidBodies.forEach(obj => {
-                if (obj.material && obj.material.uniforms && obj.material.uniforms.thickness) {
-                    obj.material.uniforms.thickness.value = value;
-                }
-            });
+    .name('Outline Thickness')
+    .onChange((value) => {
+        // Update all existing materials
+        state.rigidBodies.forEach(obj => {
+            if (obj.material && obj.material.uniforms && obj.material.uniforms.thickness) {
+                obj.material.uniforms.thickness.value = value;
+            }
         });
+    });
     
     // materialFolder.open();
 }
 
 function setupLightsGUI() {
     const lightsFolder = gui.addFolder('Lights');
-
+    
     // Find lights in the scene
     const ambientLight = state.scene.children.find(child => child instanceof THREE.AmbientLight);
     const hemisphereLight = state.scene.children.find(child => child instanceof THREE.HemisphereLight);
     const directionalLight = state.scene.children.find(child => child instanceof THREE.DirectionalLight);
-
+    
     // Store initial light settings
     const lightSettings = {
         ambient: {
@@ -148,75 +244,75 @@ function setupLightsGUI() {
             }
         }
     };
-
+    
     // Ambient Light Controls
     const ambientFolder = lightsFolder.addFolder('Ambient Light');
     ambientFolder.add(lightSettings.ambient, 'enabled')
-        .name('Enabled')
-        .onChange(value => {
-            ambientLight.visible = value;
-        });
+    .name('Enabled')
+    .onChange(value => {
+        ambientLight.visible = value;
+    });
     ambientFolder.addColor(lightSettings.ambient, 'color')
-        .name('Color')
-        .onChange(value => {
-            ambientLight.color.set(value);
-        });
+    .name('Color')
+    .onChange(value => {
+        ambientLight.color.set(value);
+    });
     ambientFolder.add(lightSettings.ambient, 'intensity', 0, 5)
-        .name('Intensity')
-        .onChange(value => {
-            ambientLight.intensity = value;
-        });
-
+    .name('Intensity')
+    .onChange(value => {
+        ambientLight.intensity = value;
+    });
+    
     // Hemisphere Light Controls
     const hemiFolder = lightsFolder.addFolder('Hemisphere Light');
     hemiFolder.add(lightSettings.hemisphere, 'enabled')
-        .name('Enabled')
-        .onChange(value => {
-            hemisphereLight.visible = value;
-        });
+    .name('Enabled')
+    .onChange(value => {
+        hemisphereLight.visible = value;
+    });
     hemiFolder.addColor(lightSettings.hemisphere, 'skyColor')
-        .name('Sky Color')
-        .onChange(value => {
-            hemisphereLight.color.set(value);
-        });
+    .name('Sky Color')
+    .onChange(value => {
+        hemisphereLight.color.set(value);
+    });
     hemiFolder.addColor(lightSettings.hemisphere, 'groundColor')
-        .name('Ground Color')
-        .onChange(value => {
-            hemisphereLight.groundColor.set(value);
-        });
+    .name('Ground Color')
+    .onChange(value => {
+        hemisphereLight.groundColor.set(value);
+    });
     hemiFolder.add(lightSettings.hemisphere, 'intensity', 0, 5)
-        .name('Intensity')
-        .onChange(value => {
-            hemisphereLight.intensity = value;
-        });
-
+    .name('Intensity')
+    .onChange(value => {
+        hemisphereLight.intensity = value;
+    });
+    
     // Directional Light Controls
     const dirFolder = lightsFolder.addFolder('Directional Light');
     dirFolder.add(lightSettings.directional, 'enabled')
-        .name('Enabled')
-        .onChange(value => {
-            directionalLight.visible = value;
-        });
+    .name('Enabled')
+    .onChange(value => {
+        directionalLight.visible = value;
+    });
     dirFolder.addColor(lightSettings.directional, 'color')
-        .name('Color')
-        .onChange(value => {
-            directionalLight.color.set(value);
-        });
+    .name('Color')
+    .onChange(value => {
+        directionalLight.color.set(value);
+    });
     dirFolder.add(lightSettings.directional, 'intensity', 0, 10)
-        .name('Intensity')
-        .onChange(value => {
-            directionalLight.intensity = value;
-        });
+    .name('Intensity')
+    .onChange(value => {
+        directionalLight.intensity = value;
+    });
     
     // Directional Light Position Controls
     const posFolder = dirFolder.addFolder('Position');
     posFolder.add(lightSettings.directional.position, 'x', -100, 100)
-        .onChange(() => updateDirectionalLightPosition());
+    .onChange(() => updateDirectionalLightPosition());
     posFolder.add(lightSettings.directional.position, 'y', -100, 100)
-        .onChange(() => updateDirectionalLightPosition());
+    .onChange(() => updateDirectionalLightPosition());
     posFolder.add(lightSettings.directional.position, 'z', -100, 100)
-        .onChange(() => updateDirectionalLightPosition());
-
+    .onChange(() => updateDirectionalLightPosition());
+    
     function updateDirectionalLightPosition() {
         directionalLight.position.set(
             lightSettings.directional.position.x,
@@ -224,7 +320,7 @@ function setupLightsGUI() {
             lightSettings.directional.position.z
         );
     }
-
+    
     // Open the lights folder by default
     // lightsFolder.open();
 }
@@ -239,14 +335,14 @@ function setupCameraGUI() {
     state.cameraSettings = {
         preset: state.currentPreset
     };
-
+    
     // Add dropdown to GUI and store controller in state
     state.presetController = cameraFolder.add(state.cameraSettings, 'preset', presetOptions)
-        .name('Camera Preset')
-        .onChange((value) => {
-            applyCameraPreset(value);
-        });
-        
+    .name('Camera Preset')
+    .onChange((value) => {
+        applyCameraPreset(value);
+    });
+    
     cameraFolder.open();
 }
 

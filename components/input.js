@@ -15,6 +15,9 @@ export function initInput() {
 let blockTouched = false;
 let lastHighlightedBlock = null;
 
+// Add this variable to track meta/ctrl key state
+let metaKeyPressed = false;
+
 function setupInputHandlers() {
     // Mouse events
     document.addEventListener('mousedown', () => {
@@ -26,6 +29,11 @@ function setupInputHandlers() {
     });
 
     document.addEventListener('mousemove', onMouseMove);
+
+    
+    // Store physics state before modifier key was pressed
+    let previousPhysicsState = false;
+    
 
     // Keyboard events
     document.addEventListener('keydown', (event) => {
@@ -41,18 +49,67 @@ function setupInputHandlers() {
                 THREE.TOUCH.ROTATE :
                 THREE.TOUCH.PAN;
         } else if (event.metaKey || event.ctrlKey) {
-            console.log("Block moving enabled");
+            // Set flag that meta/ctrl is pressed
+            metaKeyPressed = true;
+            
+            // Stop physics immediately
             state.runPhysics = false;
+            
+            // Enable drag controls and disable orbit
             state.dragControls.enabled = true;
             state.orbitControls.enabled = false;
+            
+            console.log("Block moving enabled (meta/ctrl pressed)");
+        } 
+        // Camera position shortcuts (numbers 1-9)
+        else if (!isNaN(parseInt(event.key)) && event.key !== '0') {
+            const keyNum = parseInt(event.key);
+            const presetNames = Object.keys(state.cameraPresets);
+            
+            // Check if we have enough presets for this number
+            if (keyNum <= presetNames.length) {
+                // Get preset name (subtract 1 because arrays are 0-indexed)
+                const presetName = presetNames[keyNum - 1];
+                
+                // Import the function from gui.js for animation
+                import('./gui.js').then(module => {
+                    // Animate to selected preset with 1000ms duration
+                    module.animateCameraToPreset(presetName, 1000);
+                });
+            }
+        }
+        // Toggle GUI visibility with 'h' key
+        else if (event.key === 'h' || event.key === 'H') {
+            if (state.gui) {
+                if (state.gui.domElement.style.display === 'none') {
+                    state.gui.domElement.style.display = '';
+                } else {
+                    state.gui.domElement.style.display = 'none';
+                }
+            }
+        }
+        // Toggle GUI visibility with 'g' key
+        if (event.key === 'g' || event.key === 'G') {
+            if (state.gui) {
+                const guiDisplay = state.gui.domElement.style.display;
+                state.gui.domElement.style.display = (guiDisplay === 'none') ? '' : 'none';
+            }
         }
     });
 
     document.addEventListener('keyup', (event) => {
-        // console.log(event)
         if (event.key === 'Control' || event.key === 'Meta') {
-            console.log("Orbit enabled");
-            if (blockTouched) state.runPhysics = !state.runPhysics;
+            // Clear the meta/ctrl pressed flag
+            metaKeyPressed = false;
+            
+            console.log("Orbit enabled (meta/ctrl released)");
+            
+            // Enable physics if we were dragging
+            if (state.dragControls.enabled) {
+                state.runPhysics = true;
+            }
+            
+            // Always restore orbit controls
             state.orbitControls.enabled = true;
             state.dragControls.enabled = false;
         }
@@ -82,8 +139,16 @@ function setupViewDropdown() {
     );
 }
 
+// Modify the drag controls to work better with the meta key
 function setupDragControls() {
     state.dragControls = new DragControls(state.objects, state.camera, state.renderer.domElement);
+    
+    // Add dragstart listener to stop physics when dragging starts
+    state.dragControls.addEventListener('dragstart', function() {
+        // Ensure physics is stopped when actually dragging an object
+        state.runPhysics = false;
+    });
+    
 
     state.dragControls.addEventListener('dragend', function(event) {
         const object = event.object;
@@ -115,7 +180,10 @@ function setupDragControls() {
             physicsBody.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
             physicsBody.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
         }
-        blockTouched = false;
+        
+        // Always enable physics when dropping a block, even if meta key is still pressed
+        // This lets blocks fall naturally after placement
+        state.runPhysics = true;
     });
 
     // Initially disable drag controls
@@ -160,8 +228,13 @@ function onMouseMove(event) {
         showBlockInfo(intersectedBlock, event);
         blockTouched = true;
     } else {
-        blockTouched = false;
+
+        // Add timeout before setting blockTouched to false
+        setTimeout(() => {
+            blockTouched = false;
+        }, 200);
         showBlockInfo();
+
     }
 }
 

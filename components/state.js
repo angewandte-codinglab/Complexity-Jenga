@@ -30,6 +30,11 @@ const cameraPresets = {
         position: new THREE.Vector3(-50, 4.6 -0.4),
         rotation: new THREE.Euler(1.60, -1.1, 1.60),
         orbit: new THREE.Vector3(8.60, 30.60, -0.35)
+    },
+    Underside: {
+        position: new THREE.Vector3(0, -90, 0),
+        rotation: new THREE.Euler(1.57, 0, -4.71), // 1.57 ≈ π/2 and -4.71 ≈ -3π/2 to ensure continuity in rotation
+        orbit: new THREE.Vector3(0, 0, 0)
     }
 };
 
