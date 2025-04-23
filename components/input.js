@@ -186,7 +186,10 @@ function onMouseMove(event) {
         showBlockInfo(intersectedBlock, event);
         blockTouched = true;
     } else {
-        blockTouched = false;
+         // Add timeout before setting blockTouched to false
+         setTimeout(() => {
+            blockTouched = false;
+        }, 200);
         hideBlockInfo();
     }
 }
