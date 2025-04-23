@@ -29,6 +29,7 @@ export function initGUI() {
     
     // Export GUI to state
     state.gui = gui;
+    state.gui.domElement.style.display = 'none'; // Hide the GUI by default
 }
 
 // Setup camera animation on load

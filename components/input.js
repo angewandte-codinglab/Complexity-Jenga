@@ -85,6 +85,13 @@ function setupInputHandlers() {
                 }
             }
         }
+        // Toggle GUI visibility with 'g' key
+        if (event.key === 'g' || event.key === 'G') {
+            if (state.gui) {
+                const guiDisplay = state.gui.domElement.style.display;
+                state.gui.domElement.style.display = (guiDisplay === 'none') ? '' : 'none';
+            }
+        }
     });
     
     document.addEventListener('keyup', (event) => {
