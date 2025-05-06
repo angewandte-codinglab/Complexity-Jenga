@@ -52,12 +52,12 @@
         <div id="btns-about" class="col-12 d-flex align-items-center position-absolute">
             <button type="button" class="btn btn-sm btn-light fw-bold" data-bs-toggle="modal" data-bs-target="#legend-modal" id="btn-legend">Legend</button>
             <button type="button" class="btn btn-sm btn-light fw-bold ms-2" data-bs-toggle="modal" data-bs-target="#about-modal" id="btn-about">About</button>
-		</div>
+        </div>
         <div id="container" class="position-relative">
             <div id="hoverBox"></div>
         </div>
     </div>
-    <div class="modal fade" id="about-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="about-modal" aria-hidden="true">
+    <div class="modal fade" id="about-modal" data-bs-backdrop="false" data-bs-keyboard="false" tabindex="-1" aria-labelledby="about-modal" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header py-2">
@@ -146,17 +146,20 @@
                     <p>Some countries are more central and critical than others, acting as hubs or essential pathways through which many connections pass.</p>
                     <p>To decide which countries are critical players in this network, we explored 2 importance measures: </p>
                     <div class="btn-group btn-group-sm" role="group" aria-label="view example">
-                        <button type="button" class="btn btn-sm enable" data-name="centrality" >Betweenness Centrality</button>
-                        <button type="button" class="btn btn-sm" data-name="pagerank" >PageRank</button>
+                        <button type="button" class="btn btn-sm enable" data-name="centrality">Betweenness Centrality</button>
+                        <button type="button" class="btn btn-sm" data-name="pagerank">PageRank</button>
                     </div>
                     <div id="legend-graph" style="width: 100%; height: 500px;"></div>
                 </div>
             </div>
         </div>
     </div>
-	
     <script src="./libs/ammo.wasm.js"></script>
     <script src="./libs/bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- jQuery UI -->
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <script src="./libs/d3.v5.js"></script>
     <script type="text/javascript" src="./components/Dropdown.js"></script>
     <script type="importmap">
@@ -168,6 +171,14 @@
         }
     </script>
     <script type="module" src="./components/main.js"></script>
+    <script type="text/javascript">
+    $('#about-modal').on('shown.bs.modal', function() {
+        $(this).find('.modal-dialog').draggable({
+            handle: ".modal-content"
+        });
+    });
+    
+    </script>
 </body>
 
 </html>

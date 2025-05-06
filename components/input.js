@@ -192,7 +192,7 @@ function setupDragControls() {
 
 function onMouseMove(event) {
     //skip it if modal is on
-    if (document.querySelector('.modal.show')) return;
+    // if (document.querySelector('.modal.show')) return;
     // Calculate normalized mouse position
     state.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     state.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
