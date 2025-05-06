@@ -30,10 +30,10 @@ function setupInputHandlers() {
 
     document.addEventListener('mousemove', onMouseMove);
 
-    
+
     // Store physics state before modifier key was pressed
     let previousPhysicsState = false;
-    
+
 
     // Keyboard events
     document.addEventListener('keydown', (event) => {
@@ -51,26 +51,26 @@ function setupInputHandlers() {
         } else if (event.metaKey || event.ctrlKey) {
             // Set flag that meta/ctrl is pressed
             metaKeyPressed = true;
-            
+
             // Stop physics immediately
             state.runPhysics = false;
-            
+
             // Enable drag controls and disable orbit
             state.dragControls.enabled = true;
             state.orbitControls.enabled = false;
-            
+
             console.log("Block moving enabled (meta/ctrl pressed)");
-        } 
+        }
         // Camera position shortcuts (numbers 1-9)
         else if (!isNaN(parseInt(event.key)) && event.key !== '0') {
             const keyNum = parseInt(event.key);
             const presetNames = Object.keys(state.cameraPresets);
-            
+
             // Check if we have enough presets for this number
             if (keyNum <= presetNames.length) {
                 // Get preset name (subtract 1 because arrays are 0-indexed)
                 const presetName = presetNames[keyNum - 1];
-                
+
                 // Import the function from gui.js for animation
                 import('./gui.js').then(module => {
                     // Animate to selected preset with 1000ms duration
@@ -101,14 +101,14 @@ function setupInputHandlers() {
         if (event.key === 'Control' || event.key === 'Meta') {
             // Clear the meta/ctrl pressed flag
             metaKeyPressed = false;
-            
+
             console.log("Orbit enabled (meta/ctrl released)");
-            
+
             // Enable physics if we were dragging
             if (state.dragControls.enabled) {
                 state.runPhysics = true;
             }
-            
+
             // Always restore orbit controls
             state.orbitControls.enabled = true;
             state.dragControls.enabled = false;
@@ -142,13 +142,13 @@ function setupViewDropdown() {
 // Modify the drag controls to work better with the meta key
 function setupDragControls() {
     state.dragControls = new DragControls(state.objects, state.camera, state.renderer.domElement);
-    
+
     // Add dragstart listener to stop physics when dragging starts
     state.dragControls.addEventListener('dragstart', function() {
         // Ensure physics is stopped when actually dragging an object
         state.runPhysics = false;
     });
-    
+
 
     state.dragControls.addEventListener('dragend', function(event) {
         const object = event.object;
@@ -180,7 +180,7 @@ function setupDragControls() {
             physicsBody.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
             physicsBody.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
         }
-        
+
         // Always enable physics when dropping a block, even if meta key is still pressed
         // This lets blocks fall naturally after placement
         state.runPhysics = true;
@@ -245,12 +245,25 @@ function showBlockInfo(block, event) {
         if (state.currentHover !== block.userData.countryCode) {
 
             hoverBox.innerHTML = `
-                <div class="title-container">
-                    <span class="title">${block.userData.country}</span>
-                    <span class="pill" style="border-color:${block.userData.color}">${block.userData.region}</span>
+                <div class="title-container d-flex pt-3">
+                    <div class="col-3 px-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 70" width="100%">
+                          ${block.userData.brickIcon}
+                        </svg>
+                    </div>
+                    <div class="d-flex flex-column col-9 fs-7">
+                        <div class="fw-bold fs-5">${block.userData.country}</div>
+                        <div class="d-flex align-items-center">
+                            Region:
+                            <span class="pill ms-2 me-1" style="background-color:${block.userData.color}"></span>
+                            <span class="fw-bold">${block.userData.region}</span>
+                        </div>
+                        <div>Betweenness centrality: <span class="fw-bold">${block.userData.brickLabel}</span></div>
+                    </div>
                 </div>
-                <div class="subtitle">
-                    This country contains ${block.userData.companies} companies, connected to the global network with an average betweenness centrality of ${block.userData.centrality.toFixed(4)} and based on an average PageRank of ${d3.format(".4f")(block.userData.pagerank)}. Further details are displayed below.
+                <div class="d-flex fs-7 p-2 mt-2 border-top">
+                    <div class="col-6">Number of Companies: <span class="fw-bold">${block.userData.companies}</span></div>
+                    <div class="col-6">Average PageRank: <span class="fw-bold">${d3.format(".4f")(block.userData.pagerank)}</span></div>
                 </div>
                 <div id="infographicBox"></div>
             `;

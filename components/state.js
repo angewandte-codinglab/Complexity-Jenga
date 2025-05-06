@@ -91,8 +91,57 @@ export const state = {
     viewContainer: d3.select('#dropdown-container'),
     colorScale: d3.scaleOrdinal()
         // .range(['#ff0000', '#ffff00', '#00ffff', '#0000ff', '#ff00ff'])
-        .range(['Lavender', 'Yellow', 'DodgerBlue', 'Tomato', 'MediumSlateBlue'])
+        .range(['Lavender', 'Gold', 'DodgerBlue', 'Tomato', 'MediumSlateBlue'])
         .domain(['Oceania', 'Europe', 'Americas', 'Asia', 'Africa']),
-    brick_layout: d3.scaleQuantize().range([1, 2, 3, 4])
+    brick_layout: d3.scaleQuantize().range([1, 2, 3, 4]),
+    brick_layout_label: d3.scaleOrdinal().domain([1, 2, 3, 4]).range(["Low", "Moderate", "Moderately high", "High"]),
+    brick_icon: (layout, color) => {
+        switch (layout) {
+          case 1:
+            return `
+            <polygon points="50.6 5.2 3.7 28.65 18.67 35.93 64.24 12.49 50.6 5.2" style="fill: #fff; opacity: .1;"/>
+            <polygon points="18.48 51.6 2.52 43.34 2.52 29.65 18.48 37.18 18.48 51.6" style="fill: #fff; opacity: .1;"/>
+            <polygon points="66.27 13.33 19.75 36.59 34.72 43.87 80.29 20.43 66.27 13.33" style="fill: ${color};"/>
+            <polygon points="82.36 21.21 35.71 44.53 49.9 51.6 96.69 28.15 82.36 21.21" style="fill: #fff; opacity: .1;"/>
+            <polygon points="97.48 29.15 50.68 52.44 50.68 66.4 97.48 43.47 97.48 29.15" style="fill: #fff; opacity: .1;"/>
+            <polygon points="81.93 21.21 34.82 44.89 34.82 58.86 81.93 35.53 81.93 21.21" style="fill: ${color};"/>
+            <polygon points="33.97 58.61 19.29 51.85 19.29 37.56 33.97 44.98 33.97 58.61" style="fill: ${color};"/>
+            <polygon points="49.9 66.4 34.82 58.86 34.82 45.33 49.9 52.81 49.9 66.4" style="fill: #fff; opacity: .1;"/>`
+            break;
+          case 2:
+            return `
+            <polygon points="50.6 5.2 3.7 28.65 18.67 35.93 64.24 12.49 50.6 5.2" style="fill: #fff; opacity: .1;"/>
+            <polygon points="18.48 51.6 2.52 43.34 2.52 29.65 18.48 37.18 18.48 51.6" style="fill: #fff; opacity: .1;"/>
+            <polygon points="66.27 13.33 19.75 36.59 34.72 43.87 80.29 20.43 66.27 13.33" style="fill:${color};"/>
+            <polygon points="82.36 21.21 35.71 44.53 49.9 51.6 96.69 28.15 82.36 21.21" style="fill: ${color};"/>
+            <polygon points="97.48 29.15 50.68 52.44 50.68 66.4 97.48 43.47 97.48 29.15" style="fill: ${color};"/>
+            <polygon points="33.97 58.61 19.29 51.85 19.29 37.56 33.97 44.98 33.97 58.61" style="fill: ${color};"/>
+            <polygon points="49.9 66.4 34.82 58.86 34.82 45.33 49.9 52.81 49.9 66.4" style="fill: ${color};"/>
+            `
+            break;
+          case 3:
+            return `
+            <polygon points="50.6 5.2 3.7 28.65 18.67 35.93 64.24 12.49 50.6 5.2" style="fill: ${color};"/>
+            <polygon points="18.48 51.6 2.52 43.34 2.52 29.65 18.48 37.18 18.48 51.6" style="fill: ${color};"/>
+            <polygon points="66.27 13.33 19.75 36.59 34.72 43.87 80.29 20.43 66.27 13.33" style="fill: #fff; opacity: .1;"/>
+            <polygon points="82.36 21.21 35.71 44.53 49.9 51.6 96.69 28.15 82.36 21.21" style="fill: ${color};"/>
+            <polygon points="97.48 29.15 50.68 52.44 50.68 66.4 97.48 43.47 97.48 29.15" style="fill: ${color};"/>
+            <polygon points="66.2 13.41 19.29 37.23 19.29 51.6 66.2 27.73 66.2 13.41" style="fill: ${color};"/>
+            <polygon points="33.97 58.61 19.29 51.85 19.29 37.56 33.97 44.98 33.97 58.61" style="fill: #fff; opacity: .1;"/>
+            <polygon points="49.9 66.4 34.82 58.86 34.82 45.33 49.9 52.81 49.9 66.4" style="fill: ${color};"/>
+            `
+            break;
+          default:
+            return `
+            <polygon points="50.6 5.2 3.7 28.65 18.67 35.93 64.24 12.49 50.6 5.2" style="fill: ${color};"/>
+            <polygon points="18.48 51.6 2.52 43.34 2.52 29.65 18.48 37.18 18.48 51.6" style="fill: ${color};"/>
+            <polygon points="66.27 13.33 19.75 36.59 34.72 43.87 80.29 20.43 66.27 13.33" style="fill: ${color};"/>
+            <polygon points="82.36 21.21 35.71 44.53 49.9 51.6 96.69 28.15 82.36 21.21" style="fill: ${color};"/>
+            <polygon points="97.48 29.15 50.68 52.44 50.68 66.4 97.48 43.47 97.48 29.15" style="fill: ${color};"/>
+            <polygon points="33.97 58.61 19.29 51.85 19.29 37.56 33.97 44.98 33.97 58.61" style="fill: ${color};"/>
+            <polygon points="49.9 66.4 34.82 58.86 34.82 45.33 49.9 52.81 49.9 66.4" style="fill: ${color};"/>
+            `
+        }
+    },
 };
 

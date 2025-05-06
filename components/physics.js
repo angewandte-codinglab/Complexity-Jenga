@@ -167,6 +167,8 @@ function createBlocksFromData(data, brickMass, brickLength, brickDepth, brickHei
                 brick.userData.color = d.color;
                 brick.userData.brickLayoutPerLayer = brickLayoutPerLayer;
                 brick.userData.countryCode = d.country_iso_code;
+                brick.userData.brickLabel = state.brick_layout_label(brickLayoutPerLayer)
+                brick.userData.brickIcon = state.brick_icon(brickLayoutPerLayer, brick.userData.color)
                 
                 state.objects.push(brick);
             }
