@@ -184,6 +184,7 @@ select {
   animation: pulse 1.5s ease-in-out infinite;
 }
 
+
 @keyframes pulse {
   0%   { r: 12; }
   50%  { r: 16; }
