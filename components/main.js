@@ -4,7 +4,7 @@ import { initGraphics, render } from './graphics.js';
 import { initPhysics, createObjects } from './physics.js';
 import { initInput } from './input.js';
 import { initGUI, applyCameraPreset } from './gui.js'; // Import the GUI
-import { loadCentralityGraph, loadPageRankGraph, loagTilesGraph } from './legend.js';
+import { loadCentralityGraph, loadPageRankGraph } from './legend.js';
 import { loadGlobalNetworkGraph } from './infographics.js';
 
 
