@@ -33,18 +33,15 @@ function init() {
     const randomPreset = presets[Math.floor(Math.random() * presets.length)];
     applyCameraPreset(randomPreset);
 
-    // Load the centrality or page rank graph when the "Legend" modal is shown
-    const legendModal = document.getElementById('legend-modal');
-    legendModal.addEventListener('show.bs.modal', function() {
-        // Clear any existing graph to prevent duplicates
-        const container = document.getElementById('legend-graph');
-        if (container) {
-            container.innerHTML = '';
-
-            // Default to centrality graph initially
-            loadCentralityGraph('#legend-graph');
-        }
-    });
+    // Load the centrality or page rank graph when click to uncollapse
+    const legendBetweenness = document.getElementById('legend-betweenness');
+    legendBetweenness.addEventListener('show.bs.collapse', function() {
+        loadCentralityGraph(legendBetweenness);
+    })
+    const legendPageRank = document.getElementById('legend-pagerank');
+    legendPageRank.addEventListener('show.bs.collapse', function() {
+        loadPageRankGraph(legendPageRank);
+    })
 
     // Load the relevant information when "About" modal is shown
     const aboutModal = document.getElementById('about-modal');
