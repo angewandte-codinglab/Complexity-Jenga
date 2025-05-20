@@ -2,12 +2,13 @@
 
 export function loadCentralityGraph(container) {
     // Simple Network Data
+    const normalSize = 6;
     let nodes = [
-        { id: 'A' },
-        { id: 'B' },
-        { id: 'C' },
-        { id: 'D', size: 10 },
-        { id: 'E' }
+        { id: 'A', size: normalSize,fill:'white' },
+        { id: 'B', size: normalSize,fill:'white'  },
+        { id: 'C', size: normalSize,fill:'white'  },
+        { id: 'D', size: normalSize,fill:'Tomato'  },
+        { id: 'E', size: normalSize,fill:'white'  },
     ];
 
     let links = [
@@ -18,134 +19,114 @@ export function loadCentralityGraph(container) {
         { source: 'D', target: 'E' }
     ];
 
+
     // Visualization and Animation
-    const svg = d3.select(container)
-        .append("svg")
-        .attr("width", 466)
-        .attr("height", 500)
-        .style('line-height',1.2);
+    const svg = d3.select(container).select('.legend-graph')
+        .selectAll('svg').data([0])
+        .join("svg")
+        .attr('viewBox', '-150 -100 300 200')
+        .attr('width', '100%').attr('height', '100%')
 
-    // Add explanation text
-    const titleText = svg.append("text")
-        .attr("x", 5)
-        .attr("y", 25)
-        .attr("font-size", "1rem")
-        .style("font-weight", "bold")
-        .style("fill", "black")
-        .text("Betweenness Centrality - Connectivity of Countries");
+    const graphView = svg.selectAll('.view').data([0])
+        .join("g").attr('class', 'view')
 
-    const explanationText = svg.append("foreignObject")
-        .attr("x", 5)
-        .attr("y", 40)
-        .attr("width", 450)
-        .attr("height", 200)
-        .append("xhtml:div")
-        .style("font-size", "0.85rem")
-        .style("color", "black")
-        .style("text-align", "justify")
-        .style("word-wrap", "break-word")
-        .text("Betweenness Centrality helps identify those crucial intermediary countries. Think of it as measuring how often a country acts as a bridge between others. A country with high betweenness centrality is one where many supply routes must pass through to connect different parts of the network. If such a country becomes unstable or is disrupted, it can break multiple supply chains simultaneously. Imagine Country D acting as a bridge between major suppliers and manufacturers — its failure would leave entire regions disconnected from critical components. Most network paths go through node D, which makes it increase in size and thus importance.");
+    const linkGroup = graphView.selectAll('.linkGroup').data([0])
+        .join("g").attr('class', 'linkGroup')
+
 
     // Add step text
-    const stepText = svg.append("foreignObject")
-		.attr("x", 5)
-		.attr("y", 450)
-		.attr("width", 420)
-		.attr("height", 60)
-		.append("xhtml:div")
-		.style("font-size", "0.85rem")
-		.style("color", "black")
-		.style("text-align", "justify")
-		.style("word-wrap", "break-word")
-		.text("");
+    const stepText = d3.select(container).select('.legend-text')
 
 
-    let link = svg.selectAll(".link")
+
+    let link = linkGroup.selectAll(".link")
         .data(links)
-        .enter().append("line")
+        .join("line")
         .attr("class", "link")
         .style("stroke", "black")
-        .style("stroke-width", 2);
+        .style("stroke-width", 1);
 
-    let node = svg.selectAll(".node")
-        .data(nodes)
-        .enter().append("circle")
-        .attr("class", "node")
-        .attr("r", d => d.size || 15)
+
+    let nodeGroup = graphView.selectAll(".nodeGroup")
+        .data(nodes).join('g').attr('class', 'nodeGroup')
         .attr("node-id", d => d.id)
-        .style("fill", d => d.id === 'D' ? "red" : "white")
-        .style("stroke", "black");
+
+    let node = nodeGroup.selectAll(".node")
+        .data(d => [d])
+        .join("circle")
+        .attr("class", "node")
+        .attr("r", d => d.size)
+        .style('fill', d => d.fill)
+        .style("stroke", "none");
 
     // Add node labels inside the circles
-    svg.selectAll(".label")
-        .data(nodes)
-        .enter().append("text")
-        .attr("class", "label")
+    nodeGroup.selectAll(".label")
+        .data(d => [d])
+        .join("text")
+        .attr("class", "label fw-bold")
         .attr("text-anchor", "middle")
         .attr("alignment-baseline", "middle")
-        .attr("font-size", "14px")
+        .attr("font-size", d => `${d.size * 0.8}`)
         .text(d => d.id);
 
     let simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(80))
-        .force("charge", d3.forceManyBody().strength(-200))
-        .force("center", d3.forceCenter(310, 300))
+        .force("center", d3.forceCenter(0, 0))
+        .force("link", d3.forceLink(links).id(d => d.id).strength(2))
+        .force("body", d3.forceManyBody().strength(-50))
+        .force("charge", d3.forceCollide().radius(d => d.r*2))
         .on("tick", () => {
             link.attr("x1", d => d.source.x)
                 .attr("y1", d => d.source.y)
                 .attr("x2", d => d.target.x)
                 .attr("y2", d => d.target.y);
 
-            node.attr("cx", d => d.x)
-                .attr("cy", d => d.y);
+            nodeGroup.attr('transform', d => `translate(${d.x}, ${d.y})`)
 
-            svg.selectAll(".label")
-                .attr("x", d => d.x)
-                .attr("y", d => d.y);
+            const box = graphView.node().getBBox();
+            svg.attr('viewBox', `${box.x - 10} ${box.y - 10} ${box.width + 20} ${box.height + 20}`)
         });
 
     async function removeNode(targetNode) {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Remove the node and its links
-        nodes = nodes.filter(n => n.id !== targetNode);
-        links = links.filter(l => l.source.id !== targetNode && l.target.id !== targetNode);
-
-        // Clear existing elements
-        svg.selectAll(".node").remove();
-        svg.selectAll(".link").remove();
-        svg.selectAll(".label").remove();
+        const _nodes = nodes.filter(n => n.id !== targetNode);
+        const _links = links.filter(l => l.source.id !== targetNode && l.target.id !== targetNode);
 
         // Rebind and redraw the nodes and links
-        link = svg.selectAll(".link")
-            .data(links)
-            .enter().append("line")
+        link = linkGroup.selectAll(".link")
+            .data(_links)
+            .join("line")
             .attr("class", "link")
             .style("stroke", "black")
             .style("stroke-width", 2);
 
-        node = svg.selectAll(".node")
-            .data(nodes)
-            .enter().append("circle")
-            .attr("class", "node")
-            .attr("r", d => d.size || 15)
+        nodeGroup = graphView.selectAll(".nodeGroup")
+            .data(_nodes).join('g').attr('class', 'nodeGroup')
             .attr("node-id", d => d.id)
-            .style("fill", d => d.id === 'D' ? "red" : "white")
-            .style("stroke", "black");
+
+        node = nodeGroup.selectAll(".node")
+            .data(d => [d])
+            .join("circle")
+            .attr("class", "node")
+            .attr("r", d => d.size)
+            .attr("node-id", d => d.id)
+            .style('fill', d => d.fill)
+            .style("stroke", "none");
 
         // Redraw labels
-        svg.selectAll(".label")
-            .data(nodes)
-            .enter().append("text")
+        nodeGroup.selectAll(".label")
+            .data(d => [d])
+            .join("text")
             .attr("class", "label")
             .attr("text-anchor", "middle")
             .attr("alignment-baseline", "middle")
-            .attr("font-size", "14px")
+            .attr("font-size", d => `${d.size * 0.8}`)
             .text(d => d.id);
 
         // Restart the simulation
-        simulation.nodes(nodes);
-        simulation.force("link").links(links);
+        simulation.nodes(_nodes);
+        simulation.force("link").links(_links);
         simulation.alpha(1).restart();
     }
 
@@ -157,34 +138,33 @@ export function loadCentralityGraph(container) {
             ['C', 'D', 'E']
         ];
 
-        let sizeIncrement = 20;
+        let sizeIncrement = normalSize;
 
         for (const path of paths) {
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             const passesThrough = path.includes(targetNode);
-            link.style("stroke", d => path.includes(d.source.id) && path.includes(d.target.id) ? "red" : "black")
-                .style("stroke-width", d => path.includes(d.source.id) && path.includes(d.target.id) ? 4 : 2);
+            link.style("stroke", d => path.includes(d.source.id) && path.includes(d.target.id) ? "Tomato" : "black")
+                .style("stroke-width", d => path.includes(d.source.id) && path.includes(d.target.id) ? 2 : 1);
 
-            stepText.text("Path: " + path.join(" → ") + (passesThrough ? " | Passes through central node D" : " | Does not pass through node D"));
-
+            stepText.html(`Path: ${path.join(" → ")} ${passesThrough ? " | Passes through central node D" : " | Does not pass through node D"}`)
             if (passesThrough) {
-                sizeIncrement += 5;
-                svg.select("circle[node-id='" + targetNode + "']")
+                sizeIncrement += 2;
+                node.filter(d => d.id === targetNode)
                     .transition()
                     .duration(2000)
                     .attr("r", sizeIncrement)
-                    .style("fill", "red")
-                    .style("stroke", "black");
+
             }
         }
 
         // Final Summary
-        stepText.text("Node D has high betweenness centrality");
-        
+        stepText.text("Country D has high betweenness centrality");
+
         // Remove the critical node D
         await removeNode('D');
-        stepText.text("If Node D is removed, the network is destabilized.");
+        stepText.html("If country D is removed, the network is destabilized.");
+
     }
 
     // Start the highlighting for node D
@@ -193,12 +173,13 @@ export function loadCentralityGraph(container) {
 
 export function loadPageRankGraph(container) {
     // Complex Network Data
+    const normalSize = 6;
     let nodes = [
-        { id: 'A', rank: 0.5 },
-        { id: 'B', rank: 0.15 },
-        { id: 'C', rank: 0.3 },
-        { id: 'D', rank: 0.03 },
-        { id: 'E', rank: 0.02 }
+        { id: 'A', rank: 0.5, fill:'white' },
+        { id: 'B', rank: 0.15,fill:'white' },
+        { id: 'C', rank: 0.3,fill:'white' },
+        { id: 'D', rank: 0.03, fill:"DodgerBlue" },
+        { id: 'E', rank: 0.02,fill:'white' },
     ];
 
     let links = [
@@ -209,123 +190,112 @@ export function loadPageRankGraph(container) {
         { source: 'D', target: 'E' }
     ];
 
-    const svg = d3.select(container)
-        .append("svg")
-        .attr("width", 466)
-        .attr("height", 500);
+    const svg = d3.select(container).select('.legend-graph')
+        .selectAll('svg').data([0])
+        .join("svg")
+        .attr('viewBox', '-150 -100 300 200')
+        .attr('width', '100%').attr('height', '100%')
 
-    const titleText = svg.append("text")
-        .attr("x", 5)
-        .attr("y", 25)
-        .attr("font-size", "1rem")
-        .style("font-weight", "bold")
-        .style("fill", "black")
-        .text("PageRank - Importance of Countries");
-	
-	const stepText = svg.append("foreignObject")
-    .attr("x", 5)
-    .attr("y", 450)
-    .attr("width", 420)
-    .attr("height", 60)
-    .append("xhtml:div")
-    .style("font-size", "0.85rem")
-    .style("color", "black")
-    .style("text-align", "justify")
-    .style("word-wrap", "break-word")
-    .text("");
+    const graphView = svg.selectAll('.view').data([0])
+        .join("g").attr('class', 'view')
 
-    const explanationText = svg.append("foreignObject")
-        .attr("x", 5)
-        .attr("y", 40)
-        .attr("width", 450)
-        .attr("height", 100)
-        .append("xhtml:div")
-        .style("font-size", "0.85rem")
-        .style("color", "black")
-        .style("text-align", "justify")
-        .style("word-wrap", "break-word")
-        .text("PageRank measures a country's importance based on incoming links from other important countries. A node is crucial if it is linked by other significant nodes. High PageRank indicates a hub of production or a key supplier. If disrupted, it affects not just direct connections but also downstream dependencies.");
+    const linkGroup = graphView.selectAll('.linkGroup').data([0])
+        .join("g").attr('class', 'linkGroup')
 
-    let link = svg.selectAll(".link")
+
+    // Add step text
+    const stepText = d3.select(container).select('.legend-text')
+
+    let link = linkGroup.selectAll(".link")
         .data(links)
-        .enter().append("line")
+        .join("line")
         .attr("class", "link")
         .style("stroke", "black")
         .style("stroke-width", 2);
 
-    let node = svg.selectAll(".node")
-        .data(nodes)
-        .enter().append("circle")
-        .attr("class", "node")
-        .attr("r", d => 10 + d.rank * 50)
+    let nodeGroup = graphView.selectAll(".nodeGroup")
+        .data(nodes).join('g').attr('class', 'nodeGroup')
         .attr("node-id", d => d.id)
-        .style("fill", d => d.id === 'D' ? "#1f77b4" : "white")
-        .style("stroke", "black");
 
-    svg.selectAll(".label")
-        .data(nodes)
-        .enter().append("text")
-        .attr("class", "label")
+    let node = nodeGroup.selectAll(".node")
+        .data(d => [d])
+        .join("circle")
+        .attr("class", "node")
+        .attr("r", d =>{
+            d.size = normalSize * 0.8 + d.rank * normalSize*2;
+            return d.size;
+        })
+        .style('fill', d => d.fill)
+        .style("stroke", "none");
+
+    nodeGroup.selectAll(".label")
+        .data(d => [d])
+        .join("text")
+        .attr("class", "label fw-bold")
         .attr("text-anchor", "middle")
         .attr("alignment-baseline", "middle")
-        .attr("font-size", "14px")
+        .attr("font-size", d => `${d.size * 0.8}`)
         .text(d => d.id);
 
     const simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(80))
-        .force("charge", d3.forceManyBody().strength(-200))
-        .force("center", d3.forceCenter(310, 300))
+        // .force("link", d3.forceLink(links).id(d => d.id).distance(80))
+        // .force("charge", d3.forceManyBody().strength(-200))
+        // .force("center", d3.forceCenter(310, 300))
+        .force("center", d3.forceCenter(0, 0))
+        .force("link", d3.forceLink(links).id(d => d.id).strength(2))
+        .force("body", d3.forceManyBody().strength(-50))
+        .force("charge", d3.forceCollide().radius(d => d.r*2))
         .on("tick", () => {
             link.attr("x1", d => d.source.x)
                 .attr("y1", d => d.source.y)
                 .attr("x2", d => d.target.x)
                 .attr("y2", d => d.target.y);
 
-            node.attr("cx", d => d.x)
-                .attr("cy", d => d.y);
+            nodeGroup.attr('transform', d => `translate(${d.x}, ${d.y})`)
 
-            svg.selectAll(".label")
-                .attr("x", d => d.x)
-                .attr("y", d => d.y);
+            const box = graphView.node().getBBox();
+            svg.attr('viewBox', `${box.x - 10} ${box.y - 10} ${box.width + 20} ${box.height + 20}`)
         });
 
     async function removeNode(targetNode) {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        nodes = nodes.filter(n => n.id !== targetNode);
-        links = links.filter(l => l.source.id !== targetNode && l.target.id !== targetNode);
+        const _nodes = nodes.filter(n => n.id !== targetNode);
+        const _links = links.filter(l => l.source.id !== targetNode && l.target.id !== targetNode);
 
-        svg.selectAll(".node").remove();
-        svg.selectAll(".link").remove();
-        svg.selectAll(".label").remove();
 
-        link = svg.selectAll(".link")
-            .data(links)
-            .enter().append("line")
+        link = linkGroup.selectAll(".link")
+            .data(_links)
+            .join("line")
             .attr("class", "link")
             .style("stroke", "black")
             .style("stroke-width", 2);
 
-        node = svg.selectAll(".node")
-            .data(nodes)
-            .enter().append("circle")
-            .attr("class", "node")
-            .attr("r", d => 10 + d.rank * 50)
+        nodeGroup = graphView.selectAll(".nodeGroup")
+            .data(_nodes).join('g').attr('class', 'nodeGroup')
             .attr("node-id", d => d.id)
-            .style("fill", "white")
-            .style("stroke", "black");
 
-        svg.selectAll(".label")
-            .data(nodes)
-            .enter().append("text")
+        node = nodeGroup.selectAll(".node")
+            .data(d => [d])
+            .join("circle")
+            .attr("class", "node")
+            .attr("r", d => d.size)
+            .attr("node-id", d => d.id)
+            .style('fill', d => d.fill)
+            .style("stroke", "none");
+
+        // Redraw labels
+        nodeGroup.selectAll(".label")
+            .data(d => [d])
+            .join("text")
             .attr("class", "label")
             .attr("text-anchor", "middle")
             .attr("alignment-baseline", "middle")
-            .attr("font-size", "14px")
+            .attr("font-size", d => `${d.size * 0.8}`)
             .text(d => d.id);
 
-        simulation.nodes(nodes);
-        simulation.force("link").links(links);
+        simulation.nodes(_nodes);
+        simulation.force("link").links(_links);
         simulation.alpha(1).restart();
     }
 
@@ -333,18 +303,18 @@ export function loadPageRankGraph(container) {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Step 1: Highlight A, B, and C as important nodes
-        node.style("fill", d => d.rank >= 0.3 ? "#1f77b4" : "white");
-        stepText.text("In this network, Nodes A, B, and C are the most important to preserve the integrity of the network.");
+        node.style("fill", d => d.rank >= 0.3 ? "DodgerBlue" : "white");
+        stepText.html("In this network, countries A, B, and C are the most important to preserve the integrity of the network.");
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Step 2: Highlight node D as less important but key for connectivity
-        node.style("fill", d => d.id === 'D' ? "#1f77b4" : "white");
-        stepText.text("Although node D is key for network connectivity, it is way less important than A, B, and C.");
+        node.style("fill", d => d.id === 'D' ? "DodgerBlue" : "white");
+        stepText.html("Although country D is key for network connectivity, it is way less important than A, B, and C.");
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Step 3: Remove node D and redraw the network
         await removeNode('D');
-        stepText.text("While removing node D disrupts the network, the most important part of it remains interconnected.");
+        stepText.html("While removing country D disrupts the network, the most important part of it remains interconnected.");
     }
 
     animatePageRank();
@@ -357,10 +327,10 @@ export function loagTilesGraph(container) {
     // Simple Network Data
     let nodes = [
         { id: 'A', rank: 0.5 },
-        { id: 'B', rank: 0.15  },
+        { id: 'B', rank: 0.15 },
         { id: 'C', rank: 0.3 },
         { id: 'D', rank: 0.03 },
-        { id: 'E', rank: 0.02  }
+        { id: 'E', rank: 0.02 }
     ];
 
     let links = [
@@ -464,7 +434,7 @@ export function loagTilesGraph(container) {
             .style("fill", "black")
             .text("Removing the small node D will not have a great impact on the network.");
 
-         // Remove the critical node D
+        // Remove the critical node D
         await removeNode('D');
         stepText.text("If Node D is removed, the network is destabilized.");
     }
