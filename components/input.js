@@ -191,8 +191,7 @@ function setupDragControls() {
 }
 
 function onMouseMove(event) {
-    //skip it if modal is on
-    // if (document.querySelector('.modal.show')) return;
+
     // Calculate normalized mouse position
     state.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     state.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -225,7 +224,25 @@ function onMouseMove(event) {
         // Track this block as the currently highlighted one
         lastHighlightedBlock = intersectedBlock;
 
-        showBlockInfo(intersectedBlock, event);
+        //no BlockInfo it if modal is on
+        let modalOverlap = false;
+        const modal = document.querySelector('.modal.show');
+        if (modal) {
+            const rect = modal.querySelector('.modal-dialog').getBoundingClientRect();
+            const mouseX = event.clientX;
+            const mouseY = event.clientY;
+
+            const isInsideModal =
+                mouseX >= rect.left &&
+                mouseX <= rect.right &&
+                mouseY >= rect.top &&
+                mouseY <= rect.bottom;
+            if (isInsideModal) {
+                modalOverlap = true;
+            }
+        }
+
+        if(!modalOverlap)showBlockInfo(intersectedBlock, event);
         blockTouched = true;
     } else {
 
