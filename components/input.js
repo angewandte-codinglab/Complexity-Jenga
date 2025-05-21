@@ -30,20 +30,62 @@ function setupInputHandlers() {
 
     document.addEventListener('mousemove', onMouseMove);
 
+    //controls 
+    d3.select('#btn-togglesimulation').on('click', function() {
+        toggleRunPhysics()
+    })
+    d3.select('#btn-recreate').on('click', function() {
+        toggleRecreateTower()
+    })
+    document.querySelectorAll('#setview-buttons button').forEach(button => {
+        button.addEventListener('click', () => {
+            const key = button.getAttribute('data-key');
+            handleNumberInput(+key);
+        });
+    });
+
+    function handleNumberInput(keyNum) {
+
+        const presetNames = Object.keys(state.cameraPresets);
+
+        // Check if we have enough presets for this number
+        if (keyNum <= presetNames.length) {
+            // Get preset name (subtract 1 because arrays are 0-indexed)
+            const presetName = presetNames[keyNum - 1];
+
+            // Import the function from gui.js for animation
+            import('./gui.js').then(module => {
+                // Animate to selected preset with 1000ms duration
+                module.animateCameraToPreset(presetName, 1000);
+            });
+        }
+    }
+
 
     // Store physics state before modifier key was pressed
     let previousPhysicsState = false;
 
+    function toggleRunPhysics() {
+        //update control label on 'stop'/'start' simulation
+        const el = d3.select('#btn-togglesimulation')
+        el.classed('enable', !el.classed('enable'));
+
+        state.runPhysics = !state.runPhysics;
+        console.log("Physics running: " + state.runPhysics);
+    }
+
+    function toggleRecreateTower() {
+        state.runPhysics = false;
+        removeAllBlocks();
+        createObjects();
+    }
 
     // Keyboard events
     document.addEventListener('keydown', (event) => {
         if (event.key === " " || event.code === "Space") {
-            state.runPhysics = false;
-            removeAllBlocks();
-            createObjects();
+            toggleRecreateTower()
         } else if (event.code === "Enter") {
-            state.runPhysics = !state.runPhysics;
-            console.log("Physics running: " + state.runPhysics);
+            toggleRunPhysics()
         } else if (event.code === "KeyM") {
             state.controls.touches.ONE = (state.controls.touches.ONE === THREE.TOUCH.PAN) ?
                 THREE.TOUCH.ROTATE :
@@ -64,19 +106,8 @@ function setupInputHandlers() {
         // Camera position shortcuts (numbers 1-9)
         else if (!isNaN(parseInt(event.key)) && event.key !== '0') {
             const keyNum = parseInt(event.key);
-            const presetNames = Object.keys(state.cameraPresets);
-
-            // Check if we have enough presets for this number
-            if (keyNum <= presetNames.length) {
-                // Get preset name (subtract 1 because arrays are 0-indexed)
-                const presetName = presetNames[keyNum - 1];
-
-                // Import the function from gui.js for animation
-                import('./gui.js').then(module => {
-                    // Animate to selected preset with 1000ms duration
-                    module.animateCameraToPreset(presetName, 1000);
-                });
-            }
+            handleNumberInput(keyNum);
+            
         }
         // Toggle GUI visibility with 'h' key
         else if (event.key === 'h' || event.key === 'H') {
@@ -242,7 +273,7 @@ function onMouseMove(event) {
             }
         }
 
-        if(!modalOverlap)showBlockInfo(intersectedBlock, event);
+        if (!modalOverlap) showBlockInfo(intersectedBlock, event);
         blockTouched = true;
     } else {
 

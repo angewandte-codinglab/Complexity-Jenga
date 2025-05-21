@@ -20,7 +20,12 @@ a {
 a:hover {
     text-decoration: underline;
 }
-
+.modal{
+    pointer-events: none;
+}
+.modal-content{
+    pointer-events: auto;
+}
 .nocursor {
     -moz-user-select: none;
     -webkit-user-select: none;
