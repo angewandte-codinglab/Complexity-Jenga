@@ -169,6 +169,7 @@ function createBlocksFromData(data, brickMass, brickLength, brickDepth, brickHei
                 brick.userData.countryCode = d.country_iso_code;
                 brick.userData.brickLabel = state.brick_layout_label(brickLayoutPerLayer)
                 brick.userData.brickIcon = state.brick_icon(brickLayoutPerLayer, brick.userData.color)
+                brick.userData.neighbors = state.datasets.links.filter(n => [n.target,n.source].includes(d.country_iso_code))
                 
                 state.objects.push(brick);
             }
