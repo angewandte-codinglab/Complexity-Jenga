@@ -255,8 +255,12 @@ function networkGraph(_, data) {
             })
 
             let toggle = true;
+            animate()
             d3.interval(() => {
+                animate()
 
+            }, 3000); // runs every 1800ms
+            function animate() {
                 item.transition()
                     .duration(400).delay(toggle ? 0 : 1000)
                     .ease(d3.easeCubic)
@@ -264,8 +268,8 @@ function networkGraph(_, data) {
 
                         return toggle ? `M${-d._r} ${-d._r} h${d._r * 2} v${d._r * 2} h${-d._r * 2} z` : `M${-d.r} ${-d.r} h${d.r * 2} v${d.r * 2} h${-d.r * 2} z`;
                     })
-                  .attr('transform', d => toggle && d.id === iso ? 'rotate(45) scale(2)' : 'rotate(0) scale(1)')
-              
+                    .attr('transform', d => toggle && d.id === iso ? 'rotate(45) scale(2)' : 'rotate(0) scale(1)')
+
 
                 label.transition()
                     .duration(400).delay(toggle ? 0 : 1000)
@@ -287,7 +291,7 @@ function networkGraph(_, data) {
 
 
                 toggle = !toggle;
-            }, 3000); // runs every 1800ms
+            }
 
         }
         return update;
