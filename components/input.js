@@ -13,7 +13,7 @@ export function initInput() {
 }
 
 let blockTouched = false;
-let lastHighlightedBlock = null;
+let lastHighlightedBlocks = null; //if contains items, in array format
 
 // Add this variable to track meta/ctrl key state
 let metaKeyPressed = false;
@@ -107,7 +107,7 @@ function setupInputHandlers() {
         else if (!isNaN(parseInt(event.key)) && event.key !== '0') {
             const keyNum = parseInt(event.key);
             handleNumberInput(keyNum);
-            
+
         }
         // Toggle GUI visibility with 'h' key
         else if (event.key === 'h' || event.key === 'H') {
@@ -232,28 +232,19 @@ function onMouseMove(event) {
     const intersects = state.raycaster.intersectObjects(state.rigidBodies);
 
     // Reset previous highlighted block if exists
-    if (lastHighlightedBlock) {
-        resetBlockHighlight(lastHighlightedBlock);
-        lastHighlightedBlock = null;
-    }
+    // if (lastHighlightedBlocks) {
+    //     resetBlockHighlight(lastHighlightedBlocks);
+    //     lastHighlightedBlocks = null;
+    // }
 
     // Check if any block is intersected
     if (intersects.length > 0) {
         const intersectedBlock = intersects[0].object;
 
-        // Store original material properties if first time highlighting
-        if (!intersectedBlock.userData.hasOwnProperty('originalEmissive')) {
-            // Clone the color object instead of just storing the hex value
-            intersectedBlock.userData.originalEmissive = intersectedBlock.material.emissive.clone();
-            intersectedBlock.userData.originalEmissiveIntensity = intersectedBlock.material.emissiveIntensity;
-        }
-
-        // Apply highlighting effect
-        intersectedBlock.material.emissive.set(0xFFFFFF);
-        intersectedBlock.material.emissiveIntensity = 0.3;
+        // blockHighlight([intersectedBlock]) //one block in an array format
 
         // Track this block as the currently highlighted one
-        lastHighlightedBlock = intersectedBlock;
+        // lastHighlightedBlocks = [intersectedBlock];
 
         //no BlockInfo it if modal is on
         let modalOverlap = false;
@@ -287,6 +278,7 @@ function onMouseMove(event) {
 }
 
 function showBlockInfo(block, event) {
+    // console.log(state.rigidBodies, lastHighlightedBlocks)
     const hoverBox = document.getElementById('hoverBox');
     if (block) {
         hoverBox.style.display = 'flex';
@@ -313,7 +305,10 @@ function showBlockInfo(block, event) {
                     <div class="col-6">Number of Companies: <span class="fw-bold">${block.userData.companies}</span></div>
                     <div class="col-6">Average PageRank: <span class="fw-bold">${d3.format(".4f")(block.userData.pagerank)}</span></div>
                 </div>
-                <div id="infographicBox"></div>
+                <div id="infographicBoxContainer" class="col-12 d-flex flex-column">
+                    <div class="fs-7 p-2 d-flex flex-column lh-1"><div>Connected countries</div><div class="fs-7 text-opacity">Size by number of links between companies</div></div>
+                    <div id="infographicBox"></div>
+                </div>
             `;
             //TODO: aligh box
             hoverBox.style.top = `${Math.min(event.clientY, document.body.clientHeight - 500)}px`;
@@ -323,17 +318,61 @@ function showBlockInfo(block, event) {
 
             state.currentHover = block.userData.countryCode;
             loadGlobalNetworkGraph('infographicBox', state.currentHover);
+
+            //highlight linked countries
+            const linkedCountry = new Set(
+                block.userData.neighbors.flatMap(link => [link.source, link.target])
+            );
+
+            lastHighlightedBlocks = state.rigidBodies.filter(d => linkedCountry.has(d.userData.countryCode))
+            blockHighlight(lastHighlightedBlocks) //one block in an array format
+
+            
         }
     } else {
         hoverBox.style.display = 'none';
+        blockHighlight()
+        state.currentHover = null;
     }
 }
 
+function blockHighlight(blocks) {
+    if (blocks) {
+        blocks.forEach(block => {
+            // Store original material properties if first time highlighting
+            if (!block.userData.hasOwnProperty('originalEmissive')) {
+                // Clone the color object instead of just storing the hex value
+                block.userData.originalEmissive = block.material.emissive.clone();
+                block.userData.originalEmissiveIntensity = block.material.emissiveIntensity;
+            }
 
-function resetBlockHighlight(block) {
-    if (block && block.userData.hasOwnProperty('originalEmissive')) {
-        // Use the clone of the original color instead of just the hex value
-        block.material.emissive.copy(block.userData.originalEmissive);
-        block.material.emissiveIntensity = block.userData.originalEmissiveIntensity || 0;
+            // Apply highlighting effect
+            block.material.emissive.set(0xFFFFFF);
+            // block.material.emissiveIntensity = 0.3;
+            if (state.currentHover === block.userData.countryCode) {
+                block.material.emissiveIntensity = 0.3;
+            }else{
+                block.material.emissiveIntensity = 0.1;
+            }
+            
+            
+        })
+    } else {
+        // Reset previous highlighted block
+        // if exists
+        if (lastHighlightedBlocks) {
+            resetBlockHighlight(lastHighlightedBlocks);
+            lastHighlightedBlocks = null;
+        }
     }
+}
+
+function resetBlockHighlight(blocks) {
+    blocks.forEach(block => {
+        if (block && block.userData.hasOwnProperty('originalEmissive')) {
+            // Use the clone of the original color instead of just the hex value
+            block.material.emissive.copy(block.userData.originalEmissive);
+            block.material.emissiveIntensity = block.userData.originalEmissiveIntensity || 0;
+        }
+    })
 }

@@ -6,7 +6,7 @@ export function loadGlobalNetworkGraph(containerId, countryCode) {
     const container = d3.select(`#${containerId}`);
     // console.log(countryCode, state.datasets, container.node());
 
-    networkGraph(container, { nodes: state.datasets.results, links: state.datasets.links })(countryCode)
+    networkGraph(container, { nodes: state.datasets.results, links: JSON.parse(JSON.stringify(state.datasets.links)) })(countryCode)
 }
 
 function networkGraph(_, data) {
