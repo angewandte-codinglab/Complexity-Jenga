@@ -20,7 +20,12 @@ a {
 a:hover {
     text-decoration: underline;
 }
-
+.modal{
+    pointer-events: none;
+}
+.modal-content{
+    pointer-events: auto;
+}
 .nocursor {
     -moz-user-select: none;
     -webkit-user-select: none;
@@ -158,13 +163,19 @@ select {
     height: 0.8em;
 }
 
-
+#infographicBoxContainer{
+    background-color: #000;
+    color: #fff;
+}
+#infographicBoxContainer .text-opacity{
+    opacity: 0.6;
+}
 #infographicBox {
     /*width: 100%;*/
     /*margin-top: 0.8em;*/
     height: 280px;
 	width: 100%;
-    background-color: #000;
+    
     /*color: #888;*/
     /*font-style: italic;
     flex-direction: column;
