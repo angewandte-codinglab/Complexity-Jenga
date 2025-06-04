@@ -70,14 +70,14 @@ function createGround(pos, quat) {
     ground.castShadow = true;
     ground.receiveShadow = true;
     
-    state.textureLoader.load('textures/bg4.png', function(texture) {
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        texture.repeat.set(1, 1);
-        ground.material.map = texture;
-        ground.material.needsUpdate = true;
-    });
+    // state.textureLoader.load('textures/bg4.png', function(texture) {
+    //     texture.colorSpace = THREE.SRGBColorSpace;
+    //     texture.wrapS = THREE.RepeatWrapping;
+    //     texture.wrapT = THREE.RepeatWrapping;
+    //     texture.repeat.set(1, 1);
+    //     ground.material.map = texture;
+    //     ground.material.needsUpdate = true;
+    // });
 }
 
 function createJengaTower() {
@@ -276,7 +276,12 @@ function createMaterial(color) {
 }
 
 function createMaterialSimple(color) {
-    return new THREE.MeshPhongMaterial({ color: color });
+    const material = new THREE.MeshPhongMaterial({ 
+        color: color,
+        transparent: false, 
+        opacity: 1.0       
+    });
+    return material;
 }
 
 export function removeAllBlocks() {

@@ -50,13 +50,14 @@
         </div>
         <!-- Legend Button -->
         <div id="btns-about" class="col-12 d-flex align-items-center position-absolute">
-            <button type="button" class="btn btn-sm btn-light fw-bold ms-2" data-bs-toggle="modal" data-bs-target="#about-modal" id="btn-about">+ Info</button>
+            <button type="button" class="btn btn-sm btn-light fw-bold" data-bs-toggle="modal" data-bs-target="#legend-modal" id="btn-legend">Legend</button>
+            <button type="button" class="btn btn-sm btn-light fw-bold ms-2" data-bs-toggle="modal" data-bs-target="#about-modal" id="btn-about">About</button>
         </div>
         <div id="container" class="position-relative">
             <div id="hoverBox"></div>
         </div>
     </div>
-    <div class="modal fade" id="about-modal" data-bs-backdrop="false" data-bs-keyboard="false" tabindex="-1" aria-labelledby="about-modal">
+    <div class="modal fade" id="about-modal" data-bs-backdrop="false" data-bs-keyboard="false" tabindex="-1" aria-labelledby="about-modal" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header py-2">
@@ -68,18 +69,7 @@
                     <h1 class="fs-5 fw-bold lh-1 mb-3">The Global Semiconductor Supply Chain</h1>
                     <p>This is no ordinary tower.</p>
                     <p>Each <span class="fw-bold">layer</span> of this tower represents a <span class="fw-bold">country</span> in the global supply chain.</p>
-                    <p class="mb-0">The <span class="fw-bold">arrangement and number of blocks</span> in a layer are not random; they reflect that country's <a class="fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#legend-betweenness" aria-expanded="false" aria-controls="betweenness centrality legend">betweenness centrality</a>—how crucial its semiconductor companies are in connecting the world.</p>
-                    <div id="legend-betweenness" class="collapse col-12" style="background: #ebeced;">
-                        <div class="col-12 d-flex flex-wrap">
-                            <div class="col-12 d-flex align-items-center p-2 flex-column">
-                                <p class="fs-7 lh-1">A country with high betweenness centrality acts as a key bridge in supply chains. If it’s disrupted, it can break many trade routes at once. For example, if most paths go through country D, its failure could disconnect entire regions from critical components.</p>
-                            </div>
-                            <div class="col-12 d-flex align-items-center">
-                                <p class="legend-text fs-7 col-4 p-2 lh-1 fst-italic"></p>
-                                <div class="legend-graph col-8" style="height: 200px;"></div>
-                            </div>
-                        </div>
-                    </div>
+                    <p class="mb-0">The <span class="fw-bold">arrangement and number of blocks</span> in a layer are not random; they reflect that country's <span class="fw-bold">betweenness centrality</span>—how crucial its semiconductor companies are in connecting the world.</p>
                     <!-- [images of High centrality | Moderately high | Moderate | Low centrality] -->
                     <div class="col-12 d-flex my-2 fs-7 justify-content-between">
                         <div class="col d-flex flex-column align-items-center">
@@ -106,18 +96,7 @@
                     <p class="fw-bold">More responsibility, more risk.</p>
                     <p class="mb-0">You can reorder the tower:</p>
                     <p class="mb-0">By <span class="fw-bold">number of companies</span> involved in the supply chain,</p>
-                    <p>or by <a class="fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#legend-pagerank" aria-expanded="false" aria-controls="pagerank legend">PageRank</a>—how authoritative they are online.</p>
-                    <div id="legend-pagerank" class="collapse col-12" style="background: #ebeced;">
-                        <div class="col-12 d-flex flex-wrap">
-                            <div class="col-12 d-flex align-items-center p-2 flex-column">
-                                <p class="fs-7 lh-1">PageRank shows how important a country is based on links from other important ones. A high PageRank means it's a key supplier or hub—if disrupted, it can impact both direct partners and wider supply chains</p>
-                            </div>
-                            <div class="col-12 d-flex align-items-center">
-                                <p class="legend-text fs-7 col-4 p-2 lh-1 fst-italic"></p>
-                                <div class="legend-graph col-8" style="height: 200px;"></div>
-                            </div>
-                        </div>
-                    </div>
+                    <p>or by <span class="fw-bold">PageRank</span>—how authoritative they are online.</p>
                     <div class="col-12 d-flex mt-2 mb-4 fs-7 lh-1 justify-content-between">
                         <div class="col d-flex">
                             <img src="./imgs/tower_sort.svg" class="col-5">
@@ -154,6 +133,27 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="legend-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="legend-modal" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h5 class="modal-title fs-6 fw-bold">Legend</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- <div>directly show tower tile: sorting, 4 types</div> -->
+                    <p>The global semiconductor supply chain is like an intricate web connecting countries and companies around the world.</p>
+                    <p>Some countries are more central and critical than others, acting as hubs or essential pathways through which many connections pass.</p>
+                    <p>To decide which countries are critical players in this network, we explored 2 importance measures: </p>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="view example">
+                        <button type="button" class="btn btn-sm enable" data-name="centrality">Betweenness Centrality</button>
+                        <button type="button" class="btn btn-sm" data-name="pagerank">PageRank</button>
+                    </div>
+                    <div id="legend-graph" style="width: 100%; height: 500px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="./libs/ammo.wasm.js"></script>
     <script src="./libs/bootstrap-5.3.3-dist/js/bootstrap.min.js"></script>
     <!-- jQuery -->
@@ -177,6 +177,7 @@
             handle: ".modal-content"
         });
     });
+    
     </script>
 </body>
 

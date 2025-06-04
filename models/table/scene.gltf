@@ -152,10 +152,7 @@
   ],
   "images": [
     {
-      "uri": "textures/bg4_low.jpg"
-    },
-    {
-      "uri": "textures/New_Material__env_2_spec_baseColor.png"
+      "uri": "textures/New_Material__env_2_spec_baseColor.jpg"
     }
   ],
   "materials": [
@@ -163,9 +160,6 @@
       "doubleSided": true,
       "name": "New_Material",
       "pbrMetallicRoughness": {
-        "baseColorTexture": {
-          "index": 0
-        },
         "metallicFactor": 0.0,
         "roughnessFactor": 0.6
       }
@@ -175,7 +169,7 @@
       "name": "New_Material__env_2_spec",
       "pbrMetallicRoughness": {
         "baseColorTexture": {
-          "index": 1
+          "index": 0
         },
         "metallicFactor": 0.0,
         "roughnessFactor": 0.6
