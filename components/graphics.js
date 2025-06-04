@@ -9,7 +9,13 @@ export function initGraphics() {
     
     // Set up camera
     state.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.2, 2000);
-    state.camera.position.set(-12*4, 48, -12*4);
+    const initialPreset = state.cameraPresets['FarAway'];
+    state.camera.position.copy(initialPreset.position);
+    state.camera.quaternion.copy(initialPreset.quaternion); // Use quaternion for orientation
+    if (state.orbitControls) {
+        state.orbitControls.target.copy(initialPreset.orbit);
+        state.orbitControls.update();
+    }
 
     // Set up scene
     state.scene = new THREE.Scene();
@@ -29,21 +35,12 @@ export function initGraphics() {
         MIDDLE: THREE.MOUSE.DOLLY,
         RIGHT: THREE.MOUSE.PAN
     };
-    state.orbitControls.target.set(0, 2, 0);
+    state.orbitControls.target.copy(initialPreset.orbit);
     state.orbitControls.enabled = true;
     state.orbitControls.update();
     
-    // Set up texture loader
-    state.textureLoader = new THREE.TextureLoader();
-    
-    // Set up lights
     setupLights();
-    
-    // Load table model
     loadTable();
-    
-    
-    // Set up window resize handler
     window.addEventListener('resize', onWindowResize);
 }
 
@@ -71,8 +68,8 @@ function setupLights() {
     light.shadow.camera.far = 200;
     
     // Increase shadow map resolution
-    light.shadow.mapSize.width = 2048;
-    light.shadow.mapSize.height = 2048;
+    light.shadow.mapSize.width = 1024;
+    light.shadow.mapSize.height = 1024;
     
     // Improve shadow quality
     light.shadow.bias = -0.001;
@@ -84,6 +81,72 @@ function setupLights() {
     // const helper = new THREE.CameraHelper(light.shadow.camera);
     // state.scene.add(helper);
 }
+
+
+function loadTable() {
+    const loader = new GLTFLoader();
+    // Pre-load the texture
+    // const texture = state.textureLoader.load('./textures/bg4_low.jpg');
+    // texture.colorSpace = THREE.SRGBColorSpace;
+    // texture.wrapS = THREE.RepeatWrapping;
+    // texture.wrapT = THREE.RepeatWrapping;
+    // texture.repeat.set(1, 1);
+    
+    loader.load(
+        'models/table/scene.gltf',  // Make sure this path matches your file location
+        function (gltf) {
+            const table = gltf.scene;
+            
+            // // Scale and position the table
+            // table.scale.set(50, 50, 50);  // Adjust scale as needed
+            // table.position.set(11, -5.35, 0);  // Adjust y position to match ground plane
+            
+            // Get the table's bounding box
+            const boundingBox = new THREE.Box3().setFromObject(table);
+            const center = boundingBox.getCenter(new THREE.Vector3());
+            const size = boundingBox.getSize(new THREE.Vector3());
+            
+            // Calculate scale based on ground plane size (assuming ground is 80x80)
+            const groundSize = 80;
+            const desiredTableWidth = groundSize * 0.8; // Make table slightly smaller than ground
+            const scale = desiredTableWidth / size.x;
+            table.scale.set(scale, scale, scale);
+            
+            // Recalculate bounding box after scaling
+            boundingBox.setFromObject(table);
+            boundingBox.getCenter(center);
+            boundingBox.getSize(size);
+            
+            // Position table so its top surface aligns with ground plane at y = -0.5
+            // and centers horizontally
+            table.position.set(
+                -center.x,  // Center horizontally
+                -3.35, // Align top with ground plane
+                -center.z   // Center depth-wise
+            );
+            
+            // Hide the table cloth mesh
+            table.traverse((child) => {
+                if (child.isMesh && child.material.name === "New_Material") {
+                    // console.log("Found New_Material, updating texture");
+                    child.material = new THREE.MeshPhongMaterial({
+                        visible: false, // This ensures the mesh doesn't participate in rendering at all
+                    });
+                }
+                child.castShadow = true;
+                child.receiveShadow = true;
+            });
+            
+            state.scene.add(table);
+        },
+        undefined,
+        function (error) {
+            console.error('Error loading table:', error);
+        }
+    );
+}
+//"Table" (https://skfb.ly/6RYGP) by Silver10211 is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
+
 export function onWindowResize() {
     state.camera.aspect = window.innerWidth / window.innerHeight;
     state.camera.updateProjectionMatrix();
@@ -126,72 +189,3 @@ function updatePhysics(deltaTime) {
         }
     }
 }
-
-function loadTable() {
-    const loader = new GLTFLoader();
-    // Pre-load the texture
-    const texture = state.textureLoader.load('./textures/bg4_low.jpg');
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1, 1);
-    
-    loader.load(
-        'models/table/scene.gltf',  // Make sure this path matches your file location
-        function (gltf) {
-            const table = gltf.scene;
-            
-            // // Scale and position the table
-            // table.scale.set(50, 50, 50);  // Adjust scale as needed
-            // table.position.set(11, -5.35, 0);  // Adjust y position to match ground plane
-            
-            // Get the table's bounding box
-            const boundingBox = new THREE.Box3().setFromObject(table);
-            const center = boundingBox.getCenter(new THREE.Vector3());
-            const size = boundingBox.getSize(new THREE.Vector3());
-            
-            // Calculate scale based on ground plane size (assuming ground is 80x80)
-            const groundSize = 80;
-            const desiredTableWidth = groundSize * 0.8; // Make table slightly smaller than ground
-            const scale = desiredTableWidth / size.x;
-            table.scale.set(scale, scale, scale);
-            
-            // Recalculate bounding box after scaling
-            boundingBox.setFromObject(table);
-            boundingBox.getCenter(center);
-            boundingBox.getSize(size);
-            
-            // Position table so its top surface aligns with ground plane at y = -0.5
-            // and centers horizontally
-            table.position.set(
-                -center.x,  // Center horizontally
-                -3.35, // Align top with ground plane
-                -center.z   // Center depth-wise
-            );
-            
-            // Find and update only  "New_Material"
-            table.traverse((child) => {
-                if (child.isMesh && child.material.name === "New_Material") {
-                    // console.log("Found New_Material, updating texture");
-                    child.material = new THREE.MeshPhongMaterial({
-                        // map: texture,
-                        // color: 0xFFFFFF,
-                        // shininess: 0
-                        transparent: true,
-                        opacity: 0,
-                        visible: false, // This ensures the mesh doesn't participate in rendering at all
-                    });
-                }
-                child.castShadow = true;
-                child.receiveShadow = true;
-            });
-            
-            state.scene.add(table);
-        },
-        undefined,
-        function (error) {
-            console.error('Error loading table:', error);
-        }
-    );
-}
-//"Table" (https://skfb.ly/6RYGP) by Silver10211 is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).

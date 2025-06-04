@@ -37,19 +37,30 @@ function setupCameraAnimation() {
     // Get preset names
     const presetNames = Object.keys(state.cameraPresets);
     
-    // Set initial camera to last preset
-    const lastPreset = presetNames[presetNames.length - 1]; // 'BottomUp'
-    applyCameraPreset(lastPreset);
-    
-    // Wait 500ms and then animate to a random preset
-    setTimeout(() => {
-        // Select a random preset different from the current one
-        let availablePresets = presetNames.filter(name => name !== lastPreset);
-        let randomPreset = availablePresets[Math.floor(Math.random() * availablePresets.length)];
-        
-        // Animate to the random preset
-        animateCameraToPreset(randomPreset, 2000); // 1.5 seconds animation
-    }, 500);
+// Wait for all content to be loaded before animating
+    function isContentLoaded() {
+        // Check if all required components are loaded
+        return (
+            state.scene &&
+            state.camera &&
+            state.orbitControls &&
+            state.renderer &&
+            state.objects && state.objects.length > 0
+        );
+    }
+
+    function tryAnimateToRandomPreset() {
+        if (isContentLoaded()) {
+            // Select a random preset different from the current one
+            let availablePresets = presetNames.filter(name => name !== "FarAway");
+            let randomPreset = availablePresets[Math.floor(Math.random() * availablePresets.length)];
+            // Animate to the random preset
+            animateCameraToPreset(randomPreset, 2000);
+        } else {
+            setTimeout(tryAnimateToRandomPreset, 100); // Check again in 100ms
+        }
+    }
+    setTimeout(tryAnimateToRandomPreset, 300);
 }
 
 // Animate camera to a specific preset
@@ -64,23 +75,23 @@ export function animateCameraToPreset(presetName, duration = 1500) {
     
     // Target positions
     const targetPos = preset.position;
-    const targetEuler = new THREE.Euler().copy(preset.rotation).reorder('XYZ');
-    const targetQuat = new THREE.Quaternion().setFromEuler(targetEuler).normalize();
+    // Use the quaternion directly from the preset
+    const targetQuat = preset.quaternion.clone().normalize();
     const targetOrbit = preset.orbit || new THREE.Vector3(0, 0, 0);
 
+    // Ensure shortest path for quaternion interpolation
     if (startQuat.dot(targetQuat) < 0) {
-    // Replace negate() with manual component negation
-    targetQuat.set(
-        -targetQuat.x,
-        -targetQuat.y,
-        -targetQuat.z,
-        -targetQuat.w
-    );
-}
+        targetQuat.set(
+            -targetQuat.x,
+            -targetQuat.y,
+            -targetQuat.z,
+            -targetQuat.w
+        );
+    }
     
     console.log('Animating camera to preset:', presetName);
-    console.log('From:', new THREE.Euler().setFromQuaternion(startQuat).toArray());
-    console.log('To:', new THREE.Euler().setFromQuaternion(targetQuat).toArray());
+    console.log('From:', startQuat.x.toFixed(2), startQuat.y.toFixed(2), startQuat.z.toFixed(2), startQuat.w.toFixed(2));
+    console.log('To:', targetQuat.x.toFixed(2), targetQuat.y.toFixed(2), targetQuat.z.toFixed(2), targetQuat.w.toFixed(2));
 
     let startTime = null;
     
@@ -103,15 +114,7 @@ export function animateCameraToPreset(presetName, duration = 1500) {
             
             requestAnimationFrame(animate);
         }
-        // } else {
-        //     // Snap to final values
-        //     state.camera.position.copy(targetPos);
-        //     state.camera.quaternion.copy(targetQuat);
-        // }
-        
-        // state.orbitControls.target.copy(targetOrbit);
-        // state.orbitControls.update();
-        
+
         state.currentPreset = presetName;
         if (state.cameraSettings) {
             state.cameraSettings.preset = presetName;

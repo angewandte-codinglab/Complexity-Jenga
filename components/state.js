@@ -4,41 +4,34 @@ const cameraPresets = {
     Untitled: {
         position: new THREE.Vector3(-110.15, 31.36, -79.78),
         rotation: new THREE.Euler(-2.91, -0.98, -2.95),
+        quaternion: new THREE.Quaternion(-0.05, 0.9, 0.06, -0.5),
         orbit: new THREE.Vector3(4.81, 13.52, -4.62)
     },
     Against: {
         position: new THREE.Vector3(98.5, 40.00, -61.2),
         rotation: new THREE.Euler(-2.8, 1, 2.85),
+        quaternion: new THREE.Quaternion(-0.05, 0.88, 0.09, 0.46),
         orbit: new THREE.Vector3(0.3, 15.2, 7.67)
     },
     Frontal: {
         position: new THREE.Vector3(-118.08, 45.50, -3.64),
         rotation: new THREE.Euler(-1.58, -1.30, -1.58),
+        quaternion: new THREE.Quaternion(-0.1, -0.7, -0.1, 0.7),
         orbit: new THREE.Vector3(2.73, 11.70, -3.32)
     },
     Immersive: {
         position: new THREE.Vector3(-58.62, 62.64, -1.58),
         rotation: new THREE.Euler(-1.58, -1.15, -1.58),
+        quaternion: new THREE.Quaternion(-0.15, -0.7, -0.15, 0.7),
         orbit: new THREE.Vector3(8.97, 32.43, -1.26)
     },
-    Curious: {
-        position: new THREE.Vector3(-69.51, 56.72, -79.64),
+    FarAway: {
+        position: new THREE.Vector3(-1377.41, 790.37, -1494.04),
         rotation: new THREE.Euler(-2.66, -0.69, -2.82),
+        quaternion: new THREE.Quaternion(0.07, 0.9, 0.17, -0.35),
         orbit: new THREE.Vector3(4.67, 15.11, 0.58)
     },
-    BottomUp: {
-        position: new THREE.Vector3(-50, 4.6 -0.4),
-        rotation: new THREE.Euler(1.60, -1.1, 1.60),
-        orbit: new THREE.Vector3(8.60, 30.60, -0.35)
-    },
-    Underside: {
-        position: new THREE.Vector3(0, -90, 0),
-        rotation: new THREE.Euler(1.57, 0, -4.71), // 1.57 ≈ π/2 and -4.71 ≈ -3π/2 to ensure continuity in rotation
-        orbit: new THREE.Vector3(0, 0, 0)
-    }
 };
-
-
 
 // Shared state object
 export const state = {
