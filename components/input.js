@@ -70,7 +70,7 @@ function setupInputHandlers() {
 
 
     // Store physics state before modifier key was pressed
-    let previousPhysicsState = false;
+    // let previousPhysicsState = false;
 
     function toggleRunPhysics() {
         //update control label on 'stop'/'start' simulation
