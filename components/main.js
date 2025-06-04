@@ -4,7 +4,7 @@ import { initGraphics, render } from './graphics.js';
 import { initPhysics, createObjects } from './physics.js';
 import { initInput } from './input.js';
 import { initGUI, applyCameraPreset } from './gui.js'; // Import the GUI
-import { loadCentralityGraph, loadPageRankGraph, loagTilesGraph } from './legend.js';
+import { loadCentralityGraph, loadPageRankGraph } from './legend.js';
 import { loadGlobalNetworkGraph } from './infographics.js';
 
 
@@ -20,18 +20,16 @@ function init() {
     initInput();
     initGUI();
 
-    // Load the centrality or page rank graph when the "Legend" modal is shown
-    const legendModal = document.getElementById('legend-modal');
-    legendModal.addEventListener('show.bs.modal', function() {
-        // Clear any existing graph to prevent duplicates
-        const container = document.getElementById('legend-graph');
-        if (container) {
-            container.innerHTML = '';
 
-            // Default to centrality graph initially
-            loadCentralityGraph('#legend-graph');
-        }
-    });
+    // Load the centrality or page rank graph when click to uncollapseAdd commentMore actions
+    const legendBetweenness = document.getElementById('legend-betweenness');
+    legendBetweenness.addEventListener('show.bs.collapse', function() {
+        loadCentralityGraph(legendBetweenness);
+    })
+    const legendPageRank = document.getElementById('legend-pagerank');
+    legendPageRank.addEventListener('show.bs.collapse', function() {
+        loadPageRankGraph(legendPageRank);
+    })
 
     // Load the relevant information when "About" modal is shown
     const aboutModal = document.getElementById('about-modal');
