@@ -359,6 +359,10 @@ function setupDragControls() {
         // Disable orbit controls while dragging
         state.orbitControls.enabled = false;
         
+        // Hide block info when dragging begins
+        showBlockInfo(); // This call with no parameters hides the info
+        
+        isDragging = true; // Set dragging state
         console.log("Started dragging block");
     });
     
@@ -369,39 +373,31 @@ function setupDragControls() {
         if (physicsBody) {
             const transform = new Ammo.btTransform();
             transform.setIdentity();
-            
             // Set the new position
             const position = object.position;
             transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-            
             // Set the new orientation
             const quaternion = object.quaternion;
             transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
-            
             // Update both the rigid body's world transform and its motion state
             physicsBody.setWorldTransform(transform);
-            
             if (physicsBody.getMotionState()) {
                 physicsBody.getMotionState().setWorldTransform(transform);
             }
-            
             // Activate the body so it doesn't remain sleeping
             physicsBody.activate();
-            
             // Clear the velocity to avoid unexpected movement after dragging
             physicsBody.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
             physicsBody.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
         }
-        
         // Re-enable physics when dropping a block
         state.runPhysics = true;
-        
         // Always restore orbit controls unless meta key is held
         if (!metaKeyPressed) {
             state.orbitControls.enabled = true;
             state.orbitControls.enableRotate = true;
         }
-        
+        isDragging = false; // Allow block info on hover again
         console.log("Finished dragging block");
     });
     
@@ -413,6 +409,7 @@ function setupDragControls() {
         // Temporarily reduce orbit control responsiveness when hovering over objects
         if (state.orbitControls.enabled) {
             state.orbitControls.enableRotate = false;
+            // console.log("Hover started - orbit controls disabled");
         }
     });
     
@@ -420,6 +417,7 @@ function setupDragControls() {
         // Restore orbit controls when not hovering over objects
         if (state.orbitControls.enabled && !isDragging) {
             state.orbitControls.enableRotate = true;
+            // console.log("Hover ended - orbit controls restored");
         }
     });
 }
@@ -471,12 +469,7 @@ function onMouseMove(event) {
     if (intersects.length > 0) {
         const intersectedBlock = intersects[0].object;
 
-        // blockHighlight([intersectedBlock]) //one block in an array format
-
-        // Track this block as the currently highlighted one
-        // lastHighlightedBlocks = [intersectedBlock];
-
-        //no BlockInfo it if modal is on
+        // Skip showing block info if we're currently dragging
         let modalOverlap = false;
         const modal = document.querySelector('.modal.show');
         if (modal) {
@@ -494,7 +487,10 @@ function onMouseMove(event) {
             }
         }
 
-        if (!modalOverlap && !isMobile()) showBlockInfo(intersectedBlock, event);
+        // Only show block info if not dragging, not in a modal, and not on mobile
+        if (!modalOverlap && !isMobile() && !isDragging) {
+            showBlockInfo(intersectedBlock, event);
+        }
 
         blockTouched = true;
     } else {
@@ -503,7 +499,7 @@ function onMouseMove(event) {
         setTimeout(() => {
             blockTouched = false;
         }, 200);
-        // showBlockInfo();
+        showBlockInfo();
         
     }
 }
