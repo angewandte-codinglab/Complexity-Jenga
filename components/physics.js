@@ -294,3 +294,218 @@ export function removeAllBlocks() {
     state.rigidBodies.length = 0; // Clear the array
     state.objects.length = 0; // Clear objects array too
 }
+
+export function animateRecreateTower() {
+    // Stop physics during animation
+    state.runPhysics = false;
+    
+    // Store existing blocks
+    const existingBlocks = [...state.rigidBodies];
+    const existingObjects = [...state.objects];
+    
+    // Temporarily remove physics bodies but keep visual meshes
+    existingBlocks.forEach(obj => {
+        state.physicsWorld.removeRigidBody(obj.userData.physicsBody);
+    });
+    
+    // Load data and calculate new target positions
+    import('./data.js').then(module => {
+        module.loadData().then(data => {
+            state.datasets = data;
+            const results = data.results;
+            
+            // Sort data based on current view (same as createBlocksFromData)
+            results.sort((a, b) => b[state.currentView.id] - a[state.currentView.id]);
+            
+            // Calculate what the new tower should look like
+            const newTowerData = calculateTowerLayout(results);
+            
+            // Start animation
+            animateBricksToNewTower(existingBlocks, newTowerData);
+        });
+    });
+}
+
+function calculateTowerLayout(data) {
+    // Same dimensions as createJengaTower
+    const brickMass = 100;
+    const brickLength = 1.2*4; 
+    const brickDepth = brickLength / 3;
+    const brickHeight = brickLength / 4;
+    const heightOffset = -0.0008;
+    const numBricksPerLayer = 3;
+    
+    const newLayout = [];
+    
+    data.forEach((d, j) => {
+        d.color = state.colorScale(d.macro_region);
+        const brickLayoutPerLayer = state.showAllBricks ? 4 : state.brick_layout(d.mean_betweeness_centrality);
+        
+        // Same logic as original createBlocksFromData
+        const isOddLayer = j % 2 !== 0;
+        const x0 = isOddLayer ? -(numBricksPerLayer * brickDepth / numBricksPerLayer) : 0;
+        const z0 = isOddLayer ? 0 : -(numBricksPerLayer * brickDepth / numBricksPerLayer);
+        
+        const layerY = (brickHeight + heightOffset) * (j + .5);
+        const quat = new THREE.Quaternion(0, isOddLayer ? 0.7071 : 0, 0, isOddLayer ? 0.7071 : 1);
+        
+        for (let i = 0; i < numBricksPerLayer; i++) {
+            // Same brick skip logic
+            if ((i === 0 && brickLayoutPerLayer > 1) || 
+                (i === 1 && brickLayoutPerLayer !== 3) || 
+                (i === 2 && brickLayoutPerLayer > 2)) {
+                
+                // Calculate position (same as original)
+                let brickX, brickZ;
+                if (isOddLayer) {
+                    brickX = x0 + (i * brickDepth);
+                    brickZ = z0;
+                } else {
+                    brickX = x0;
+                    brickZ = z0 + (i * brickDepth);
+                }
+                
+                newLayout.push({
+                    position: new THREE.Vector3(brickX, layerY, brickZ),
+                    rotation: quat.clone(),
+                    countryData: d,
+                    brickLayoutPerLayer: brickLayoutPerLayer
+                });
+            }
+        }
+    });
+    
+    return newLayout;
+}
+
+function animateBricksToNewTower(existingBlocks, newLayout) {
+    const animationDuration = 2000; // 2 seconds
+    const startTime = performance.now();
+    
+    // Store initial positions and rotations
+    const initialStates = existingBlocks.map(block => ({
+        position: block.position.clone(),
+        rotation: block.quaternion.clone(),
+        material: block.material
+    }));
+    
+    // Calculate how many blocks we need
+    const blocksNeeded = newLayout.length;
+    const blocksAvailable = existingBlocks.length;
+    
+    function animate() {
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(elapsed / animationDuration, 1.0);
+        
+        // Cubic easing function
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        
+        // Animate existing blocks to new positions
+        const blocksToAnimate = Math.min(blocksAvailable, blocksNeeded);
+        
+        for (let i = 0; i < blocksToAnimate; i++) {
+            const block = existingBlocks[i];
+            const initial = initialStates[i];
+            const target = newLayout[i];
+            
+            // Animate position and rotation
+            block.position.lerpVectors(initial.position, target.position, easedProgress);
+            block.quaternion.slerpQuaternions(initial.rotation, target.rotation, easedProgress);
+            
+            // Update color at the end of animation
+            if (progress === 1.0) {
+                // Create new material with correct color (same as original creation)
+                block.material = createMaterialSimple(target.countryData.color);
+            }
+            
+            // Update userData at the end
+            if (progress === 1.0) {
+                updateBlockUserData(block, target.countryData, target.brickLayoutPerLayer);
+            }
+        }
+        
+        if (progress < 1.0) {
+            requestAnimationFrame(animate);
+        } else {
+            completeAnimation(existingBlocks, newLayout);
+        }
+    }
+    
+    requestAnimationFrame(animate);
+}
+
+function updateBlockUserData(block, countryData, brickLayoutPerLayer) {
+    block.userData.region = countryData.macro_region;
+    block.userData.country = countryData.country;
+    block.userData.companies = countryData.number_of_companies;
+    block.userData.centrality = countryData.mean_betweeness_centrality;
+    block.userData.pagerank = countryData.mean_page_rank;
+    block.userData.color = countryData.color;
+    block.userData.brickLayoutPerLayer = brickLayoutPerLayer;
+    block.userData.countryCode = countryData.country_iso_code;
+    block.userData.brickLabel = state.brick_layout_label(brickLayoutPerLayer);
+    block.userData.brickIcon = state.brick_icon(brickLayoutPerLayer, countryData.color);
+    block.userData.neighbors = state.datasets.links.filter(n => [n.target,n.source].includes(countryData.country_iso_code));
+}
+
+function completeAnimation(existingBlocks, newLayout) {
+    const blocksNeeded = newLayout.length;
+    const blocksAvailable = existingBlocks.length;
+    
+    // Remove excess blocks if we have more than needed
+    if (blocksAvailable > blocksNeeded) {
+        for (let i = blocksNeeded; i < blocksAvailable; i++) {
+            state.scene.remove(existingBlocks[i]);
+        }
+        state.rigidBodies.splice(blocksNeeded);
+        state.objects.splice(blocksNeeded);
+    }
+    
+    // Create new blocks if we need more
+    if (blocksNeeded > blocksAvailable) {
+        for (let i = blocksAvailable; i < blocksNeeded; i++) {
+            const target = newLayout[i];
+            const brick = createParalellepiped(
+                1.2*4, 1.2*4/4, 1.2*4/3, 100,
+                target.position, target.rotation,
+                createMaterialSimple(target.countryData.color)
+            );
+            
+            brick.castShadow = true;
+            brick.receiveShadow = true;
+            updateBlockUserData(brick, target.countryData, target.brickLayoutPerLayer);
+            state.objects.push(brick);
+        }
+    }
+    
+    // Recreate physics bodies for all blocks
+    const finalBlocks = state.rigidBodies.slice(0, blocksNeeded);
+    finalBlocks.forEach(block => {
+        const shape = new Ammo.btBoxShape(new Ammo.btVector3(1.2*4 * 0.5, (1.2*4/4) * 0.5, (1.2*4/3) * 0.5));
+        shape.setMargin(state.margin);
+        
+        const transform = new Ammo.btTransform();
+        transform.setIdentity();
+        transform.setOrigin(new Ammo.btVector3(block.position.x, block.position.y, block.position.z));
+        transform.setRotation(new Ammo.btQuaternion(block.quaternion.x, block.quaternion.y, block.quaternion.z, block.quaternion.w));
+        
+        const motionState = new Ammo.btDefaultMotionState(transform);
+        const localInertia = new Ammo.btVector3(0, 0, 0);
+        shape.calculateLocalInertia(100, localInertia);
+        
+        const rbInfo = new Ammo.btRigidBodyConstructionInfo(100, motionState, shape, localInertia);
+        const body = new Ammo.btRigidBody(rbInfo);
+        
+        body.setSleepingThresholds(0.01, 0.01);
+        body.setFriction(.5);
+        body.setRestitution(0.4);
+        body.setDamping(0.01, 0.4);
+        body.setCcdMotionThreshold(0.1);
+        body.setCcdSweptSphereRadius(0.05);
+        
+        block.userData.physicsBody = body;
+        state.physicsWorld.addRigidBody(body);
+    });
+    
+    console.log('Animated tower recreation complete');
+}

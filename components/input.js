@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { DragControls } from 'three/addons/DragControls.js';
 // import * as d3 from 'd3';
 import { state } from './state.js';
-import { removeAllBlocks, createObjects } from './physics.js';
+import { removeAllBlocks, createObjects, animateRecreateTower } from './physics.js';
 
 // Dropdown functions in Dropdown.js
 
@@ -104,9 +104,14 @@ function setupInputHandlers() {
     }
 
     function toggleRecreateTower() {
-        state.runPhysics = false;
-        removeAllBlocks();
-        createObjects();
+        // Use animated recreation if blocks exist, otherwise create normally
+        if (state.rigidBodies.length > 0) {
+            animateRecreateTower();
+        } else {
+            state.runPhysics = false;
+            removeAllBlocks();
+            createObjects();
+        }
     }
 
     function toggleBrickMoving() {
@@ -319,9 +324,15 @@ function setupViewDropdown() {
         state.currentView,
         (selected) => {
             state.currentView = selected;
-            state.runPhysics = false;
-            removeAllBlocks();
-            createObjects();
+            
+            // Use animated recreation if blocks exist, otherwise create normally
+            if (state.rigidBodies.length > 0) {
+                animateRecreateTower();
+            } else {
+                state.runPhysics = false;
+                removeAllBlocks();
+                createObjects();
+            }
             console.log(state.currentView);
         }
     );
