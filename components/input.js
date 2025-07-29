@@ -51,9 +51,9 @@ function setupInputHandlers() {
     
 
     //controls 
-    d3.select('#btn-togglesimulation').on('click', function() {
-        toggleRunPhysics()
-    })
+    // d3.select('#btn-togglesimulation').on('click', function() {
+    //     toggleRunPhysics()
+    // })
     d3.select('#btn-recreate').on('click', function() {
         toggleRecreateTower()
     })
@@ -90,8 +90,8 @@ function setupInputHandlers() {
 
     function toggleRunPhysics() {
         //update control label on 'stop'/'start' simulation
-        const el = d3.select('#btn-togglesimulation')
-        el.classed('enable', !el.classed('enable'));
+        // const el = d3.select('#btn-togglesimulation')
+        // el.classed('enable', !el.classed('enable'));
 
         state.runPhysics = !state.runPhysics;
         console.log("Physics running: " + state.runPhysics);
@@ -530,8 +530,8 @@ function showBlockInfo(block, event) {
                     </div>
                 </div>
                 <div class="d-flex fs-7 p-2 mt-2 border-top">
-                    <div class="col-6">Number of Companies: <span class="fw-bold">${block.userData.companies}</span></div>
-                    <div class="col-6">Average PageRank: <span class="fw-bold">${d3.format(".4f")(block.userData.pagerank)}</span></div>
+                    <div class="col-6">Num. Companies: <span class="fw-bold">${block.userData.companies}</span></div>
+                    <div class="col-6">Avg. PageRank: <span class="fw-bold">${d3.format(".4f")(block.userData.pagerank)}</span></div>
                 </div>
                 <div id="infographicBoxContainer" class="col-12 d-flex flex-column">
                     <div class="fs-7 p-2 d-flex flex-column lh-1"><div>Connected countries</div><div class="fs-7 text-opacity">Size by number of links between companies</div></div>
@@ -540,7 +540,7 @@ function showBlockInfo(block, event) {
             `;
             //TODO: aligh box
             hoverBox.style.top = `${Math.min(event.clientY, document.body.clientHeight - 500)}px`;
-            hoverBox.style.left = `${event.clientX + 30}px`;
+            hoverBox.style.left = `${Math.min(event.clientX + 30, document.body.clientWidth - Math.min(400, document.body.clientWidth))}px`;
             
             // Draw the network graph for the hovered country
             
