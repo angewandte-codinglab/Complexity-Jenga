@@ -38,7 +38,7 @@ export const state = {
     // Constants
     gravityConstant: -9.8,
     margin: 0.001,
-    defaultTimeDiv: 0.5,
+    defaultTimeDiv: 0.8,
     showAllBricks: false,
     
     // Graphics
@@ -73,7 +73,6 @@ export const state = {
     
     // Runtime state
     runPhysics: false,
-    timeDiv: 2,
     
     // Raycasting
     raycaster: new THREE.Raycaster(),
