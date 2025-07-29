@@ -8,13 +8,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-This is a client-side JavaScript application that runs directly in the browser. No build system is required.
+This is a client-side JavaScript application that runs directly in the browser.
 
-**Running the application:**
+**Running the application (Development):**
 - Open `index.html` in a web browser or serve via local HTTP server
 - For development, use a local server: `python -m http.server 8000` or `npx serve .`
 
-**No package.json or build commands** - this is a vanilla JavaScript project using ES6 modules.
+**Building for Production:**
+The project includes an optional build system for creating optimized release versions:
+
+```bash
+npm install     # Install build dependencies (first time only)
+npm run build   # Create minified release in /release folder
+```
+
+**Build Process:**
+- Minifies all JavaScript files (removes comments, console.log, shortens variables)
+- Minifies CSS files (removes whitespace, optimizes rules)  
+- Minifies HTML (removes comments and whitespace)
+- Copies all static assets (data, images, models, textures)
+- Typical size reduction: 35-45% for text files
+- Three.js reduces from ~1.2MB to ~700KB
+
+**Deployment:**
+- Upload contents of `/release` folder to web server
+- No server-side processing required - static files only
+- Ensure server can serve .js, .css, .wasm, .gltf, .csv files
 
 ## Architecture
 
