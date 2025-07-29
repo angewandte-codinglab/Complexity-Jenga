@@ -382,16 +382,16 @@ function animateBricksToNewTower(existingBlocks, newLayout) {
     const animationDuration = 2000; // 2 seconds
     const startTime = performance.now();
     
-    // Store initial positions and rotations
-    const initialStates = existingBlocks.map(block => ({
-        position: block.position.clone(),
-        rotation: block.quaternion.clone(),
-        material: block.material
-    }));
+    // Create assignments by matching country codes
+    const assignments = matchBlocksToNewPositions(existingBlocks, newLayout);
     
-    // Calculate how many blocks we need
-    const blocksNeeded = newLayout.length;
-    const blocksAvailable = existingBlocks.length;
+    // Store initial states for each assignment
+    assignments.forEach(assignment => {
+        if (assignment.block) {
+            assignment.initialPosition = assignment.block.position.clone();
+            assignment.initialRotation = assignment.block.quaternion.clone();
+        }
+    });
     
     function animate() {
         const elapsed = performance.now() - startTime;
@@ -400,38 +400,148 @@ function animateBricksToNewTower(existingBlocks, newLayout) {
         // Cubic easing function
         const easedProgress = 1 - Math.pow(1 - progress, 3);
         
-        // Animate existing blocks to new positions
-        const blocksToAnimate = Math.min(blocksAvailable, blocksNeeded);
-        
-        for (let i = 0; i < blocksToAnimate; i++) {
-            const block = existingBlocks[i];
-            const initial = initialStates[i];
-            const target = newLayout[i];
-            
-            // Animate position and rotation
-            block.position.lerpVectors(initial.position, target.position, easedProgress);
-            block.quaternion.slerpQuaternions(initial.rotation, target.rotation, easedProgress);
-            
-            // Update color at the end of animation
-            if (progress === 1.0) {
-                // Create new material with correct color (same as original creation)
-                block.material = createMaterialSimple(target.countryData.color);
+        // Animate each assignment
+        assignments.forEach(assignment => {
+            if (assignment.block && assignment.target) {
+                // Animate position and rotation to the target
+                assignment.block.position.lerpVectors(
+                    assignment.initialPosition, 
+                    assignment.target.position, 
+                    easedProgress
+                );
+                assignment.block.quaternion.slerpQuaternions(
+                    assignment.initialRotation, 
+                    assignment.target.rotation, 
+                    easedProgress
+                );
+                
+                // Update at the end of animation only if country changed
+                if (progress === 1.0 && assignment.block.userData.countryCode !== assignment.target.countryData.country_iso_code) {
+                    // Create new material with correct color
+                    assignment.block.material = createMaterialSimple(assignment.target.countryData.color);
+                    // Update userData
+                    updateBlockUserData(assignment.block, assignment.target.countryData, assignment.target.brickLayoutPerLayer);
+                }
             }
-            
-            // Update userData at the end
-            if (progress === 1.0) {
-                updateBlockUserData(block, target.countryData, target.brickLayoutPerLayer);
-            }
-        }
+        });
         
         if (progress < 1.0) {
             requestAnimationFrame(animate);
         } else {
-            completeAnimation(existingBlocks, newLayout);
+            completeAnimationWithAssignments(assignments, newLayout);
         }
     }
     
     requestAnimationFrame(animate);
+}
+
+function matchBlocksToNewPositions(existingBlocks, newLayout) {
+    const assignments = [];
+    const usedTargets = new Set();
+    
+    // First pass: match existing blocks to targets by country code
+    existingBlocks.forEach(block => {
+        const countryCode = block.userData.countryCode;
+        
+        // Find a target position for this country that hasn't been used
+        const targetIndex = newLayout.findIndex((target, index) => 
+            !usedTargets.has(index) && target.countryData.country_iso_code === countryCode
+        );
+        
+        if (targetIndex !== -1) {
+            // Found a matching country position
+            assignments.push({
+                block: block,
+                target: newLayout[targetIndex]
+            });
+            usedTargets.add(targetIndex);
+        } else {
+            // No matching country position found - will be reassigned
+            assignments.push({
+                block: block,
+                target: null
+            });
+        }
+    });
+    
+    // Second pass: assign remaining blocks to unused positions
+    let unusedTargetIndex = 0;
+    assignments.forEach(assignment => {
+        if (!assignment.target) {
+            // Find next unused target position
+            while (unusedTargetIndex < newLayout.length && usedTargets.has(unusedTargetIndex)) {
+                unusedTargetIndex++;
+            }
+            
+            if (unusedTargetIndex < newLayout.length) {
+                assignment.target = newLayout[unusedTargetIndex];
+                usedTargets.add(unusedTargetIndex);
+                unusedTargetIndex++;
+            }
+        }
+    });
+    
+    return assignments;
+}
+
+function completeAnimationWithAssignments(assignments, newLayout) {
+    // Remove blocks that don't have targets
+    assignments.forEach(assignment => {
+        if (assignment.block && !assignment.target) {
+            state.scene.remove(assignment.block);
+            const rigidBodyIndex = state.rigidBodies.indexOf(assignment.block);
+            const objectIndex = state.objects.indexOf(assignment.block);
+            if (rigidBodyIndex > -1) state.rigidBodies.splice(rigidBodyIndex, 1);
+            if (objectIndex > -1) state.objects.splice(objectIndex, 1);
+        }
+    });
+    
+    // Create new blocks for unassigned targets
+    const assignedTargets = new Set(assignments.filter(a => a.target).map(a => a.target));
+    const unassignedTargets = newLayout.filter(target => !assignedTargets.has(target));
+    
+    unassignedTargets.forEach(target => {
+        const brick = createParalellepiped(
+            1.2*4, 1.2*4/4, 1.2*4/3, 100,
+            target.position, target.rotation,
+            createMaterialSimple(target.countryData.color)
+        );
+        
+        brick.castShadow = true;
+        brick.receiveShadow = true;
+        updateBlockUserData(brick, target.countryData, target.brickLayoutPerLayer);
+        state.objects.push(brick);
+    });
+    
+    // Recreate physics bodies for all remaining blocks
+    state.rigidBodies.forEach(block => {
+        const shape = new Ammo.btBoxShape(new Ammo.btVector3(1.2*4 * 0.5, (1.2*4/4) * 0.5, (1.2*4/3) * 0.5));
+        shape.setMargin(state.margin);
+        
+        const transform = new Ammo.btTransform();
+        transform.setIdentity();
+        transform.setOrigin(new Ammo.btVector3(block.position.x, block.position.y, block.position.z));
+        transform.setRotation(new Ammo.btQuaternion(block.quaternion.x, block.quaternion.y, block.quaternion.z, block.quaternion.w));
+        
+        const motionState = new Ammo.btDefaultMotionState(transform);
+        const localInertia = new Ammo.btVector3(0, 0, 0);
+        shape.calculateLocalInertia(100, localInertia);
+        
+        const rbInfo = new Ammo.btRigidBodyConstructionInfo(100, motionState, shape, localInertia);
+        const body = new Ammo.btRigidBody(rbInfo);
+        
+        body.setSleepingThresholds(0.01, 0.01);
+        body.setFriction(.5);
+        body.setRestitution(0.4);
+        body.setDamping(0.01, 0.4);
+        body.setCcdMotionThreshold(0.1);
+        body.setCcdSweptSphereRadius(0.05);
+        
+        block.userData.physicsBody = body;
+        state.physicsWorld.addRigidBody(body);
+    });
+    
+    console.log('Animated tower recreation complete');
 }
 
 function updateBlockUserData(block, countryData, brickLayoutPerLayer) {
