@@ -1,1 +1,10 @@
 .DS_Store
+
+# Build output
+release/
+
+# Node modules
+node_modules/
+
+# Package lock
+package-lock.json
