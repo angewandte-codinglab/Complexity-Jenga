@@ -101,7 +101,7 @@ function createJengaTower() {
             state.brick_layout.domain(d3.extent(results, d => d.mean_betweeness_centrality));
             
             // Sort data based on current view
-            console.log(state.currentView.id);
+            // console.log(state.currentView.id);
             results.sort((a, b) => b[state.currentView.id] - a[state.currentView.id]);
             
             // Limit to only the first N data entries if desired

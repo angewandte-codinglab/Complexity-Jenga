@@ -316,9 +316,6 @@ function disableBlockMoving() {
     if (!isTouchDevice && !metaKeyPressed) {
         state.dragControls.enabled = false;
     }
-    
-    // Enable physics
-    state.runPhysics = true;
 }
 
 function setupViewDropdown() {

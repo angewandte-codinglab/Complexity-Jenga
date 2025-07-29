@@ -89,9 +89,9 @@ export function animateCameraToPreset(presetName, duration = 1500) {
         );
     }
     
-    console.log('Animating camera to preset:', presetName);
-    console.log('From:', startQuat.x.toFixed(2), startQuat.y.toFixed(2), startQuat.z.toFixed(2), startQuat.w.toFixed(2));
-    console.log('To:', targetQuat.x.toFixed(2), targetQuat.y.toFixed(2), targetQuat.z.toFixed(2), targetQuat.w.toFixed(2));
+    // console.log('Animating camera to preset:', presetName);
+    // console.log('From:', startQuat.x.toFixed(2), startQuat.y.toFixed(2), startQuat.z.toFixed(2), startQuat.w.toFixed(2));
+    // console.log('To:', targetQuat.x.toFixed(2), targetQuat.y.toFixed(2), targetQuat.z.toFixed(2), targetQuat.w.toFixed(2));
 
     let startTime = null;
     
