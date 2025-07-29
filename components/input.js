@@ -133,14 +133,6 @@ function setupInputHandlers() {
             state.controls.touches.ONE = (state.controls.touches.ONE === THREE.TOUCH.PAN) ?
             THREE.TOUCH.ROTATE :
             THREE.TOUCH.PAN;
-        } else if (event.metaKey || event.ctrlKey) {
-            // Set flag that meta/ctrl is pressed
-            metaKeyPressed = true;
-            
-            // Enable block moving mode
-            enableBlockMoving();
-            
-            console.log("Block moving enabled (meta/ctrl pressed)");
         }
         // Camera position shortcuts (numbers 1-9)
         else if (!isNaN(parseInt(event.key)) && event.key !== '0') {
@@ -181,18 +173,6 @@ function setupInputHandlers() {
                 position.y.toFixed(2),
                 position.z.toFixed(2)
             );
-        }
-    });
-    
-    document.addEventListener('keyup', (event) => {
-        if (event.key === 'Control' || event.key === 'Meta') {
-            // Clear the meta/ctrl pressed flag
-            metaKeyPressed = false;
-            
-            console.log("Orbit enabled (meta/ctrl released)");
-            
-            // Disable block moving mode
-            disableBlockMoving();
         }
     });
 }
@@ -363,7 +343,7 @@ function setupDragControls() {
         showBlockInfo(); // This call with no parameters hides the info
         
         isDragging = true; // Set dragging state
-        console.log("Started dragging block");
+        // console.log("Started dragging block");
     });
     
     state.dragControls.addEventListener('dragend', function(event) {
@@ -398,7 +378,7 @@ function setupDragControls() {
             state.orbitControls.enableRotate = true;
         }
         isDragging = false; // Allow block info on hover again
-        console.log("Finished dragging block");
+        // console.log("Finished dragging block");
     });
     
     // Initially enable drag controls for direct interaction
