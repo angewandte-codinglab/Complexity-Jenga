@@ -15,10 +15,15 @@ export function initInput() {
 let blockTouched = false;
 let lastHighlightedBlocks = null; //if contains items, in array format
 
-// Add this variable to track meta/ctrl key state
+// Add variables to track input state
 let metaKeyPressed = false;
+let isTouchDevice = false;
+let isDragging = false;
 
 function setupInputHandlers() {
+    // Detect if this is a touch device
+    isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
     // Mouse events
     document.addEventListener('mousedown', () => {
         state.timeDiv = 4;
@@ -29,6 +34,14 @@ function setupInputHandlers() {
     });
     
     document.addEventListener('mousemove', onMouseMove);
+    
+    // Add touch events for mobile devices
+    if (isTouchDevice) {
+        setupTouchEvents();
+        
+        // Ensure UI elements work properly on touch devices
+        ensureTouchCompatibility();
+    }
 
     
     
@@ -44,6 +57,9 @@ function setupInputHandlers() {
     d3.select('#btn-recreate').on('click', function() {
         toggleRecreateTower()
     })
+    d3.select('#btn-brickmoving').on('click', function() {
+        toggleBrickMoving()
+    })
     document.querySelectorAll('#setview-buttons button').forEach(button => {
         button.addEventListener('click', () => {
             const key = button.getAttribute('data-key');
@@ -56,7 +72,7 @@ function setupInputHandlers() {
         const presetNames = Object.keys(state.cameraPresets);
 
         // Check if we have enough presets for this number
-        if (keyNum <= presetNames.length) {
+        if (keyNum <= presetNames.length-1) {
             // Get preset name (subtract 1 because arrays are 0-indexed)
             const presetName = presetNames[keyNum - 1];
 
@@ -87,6 +103,20 @@ function setupInputHandlers() {
         createObjects();
     }
 
+    function toggleBrickMoving() {
+        //update control label on 'enable'/'disable' brick moving
+        const el = d3.select('#btn-brickmoving')
+        el.classed('enable', !el.classed('enable'));
+
+        if (el.classed('enable')) {
+            enableBlockMoving();
+            console.log("Block moving enabled (button pressed)");
+        } else {
+            disableBlockMoving();
+            console.log("Block moving disabled (button pressed)");
+        }
+    }
+
     // Keyboard events
     document.addEventListener('keydown', (event) => {
         if (event.key === " " || event.code === "Space") {
@@ -101,12 +131,8 @@ function setupInputHandlers() {
             // Set flag that meta/ctrl is pressed
             metaKeyPressed = true;
             
-            // Stop physics immediately
-            state.runPhysics = false;
-            
-            // Enable drag controls and disable orbit
-            state.dragControls.enabled = true;
-            state.orbitControls.enabled = false;
+            // Enable block moving mode
+            enableBlockMoving();
             
             console.log("Block moving enabled (meta/ctrl pressed)");
         }
@@ -159,16 +185,140 @@ function setupInputHandlers() {
             
             console.log("Orbit enabled (meta/ctrl released)");
             
-            // Enable physics if we were dragging
-            if (state.dragControls.enabled) {
-                state.runPhysics = true;
-            }
-            
-            // Always restore orbit controls
-            state.orbitControls.enabled = true;
-            state.dragControls.enabled = false;
+            // Disable block moving mode
+            disableBlockMoving();
         }
     });
+}
+
+// New function to handle touch events
+function setupTouchEvents() {
+    // Only attach to the 3D container, not the entire document
+    const container = document.getElementById('container');
+    container.addEventListener('touchstart', onTouchStart, { passive: false });
+    container.addEventListener('touchend', onTouchEnd, { passive: false });
+    container.addEventListener('touchmove', onTouchMove, { passive: false });
+}
+
+function onTouchStart(event) {
+    // Only prevent default if we're in the 3D area and touching a block
+    if (event.touches.length === 1) {
+        const touch = event.touches[0];
+        state.mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+        state.mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+        
+        // Check if we're touching a block
+        state.raycaster.setFromCamera(state.mouse, state.camera);
+        const intersects = state.raycaster.intersectObjects(state.rigidBodies);
+        
+        if (intersects.length > 0) {
+            // Only prevent default if we're actually touching a block
+            event.preventDefault();
+            
+            // Enable block moving for touch
+            enableBlockMoving();
+            isDragging = true;
+        }
+        // If not touching a block, let orbit controls handle the touch
+    }
+}
+
+function onTouchEnd(event) {
+    if (isDragging) {
+        event.preventDefault();
+        
+        // Properly restore controls after dragging
+        isDragging = false;
+        
+        // Re-enable orbit controls and physics
+        state.orbitControls.enabled = true;
+        state.orbitControls.enableRotate = true;
+        state.dragControls.enabled = true; // Keep drag enabled for future interactions
+        state.runPhysics = true;
+        
+        console.log("Touch drag ended - orbit controls restored");
+    }
+}
+
+function onTouchMove(event) {
+    if (isDragging && event.touches.length === 1) {
+        event.preventDefault(); // Only prevent default while actively dragging
+        
+        const touch = event.touches[0];
+        
+        // Update mouse position for raycasting and drag controls
+        state.mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+        state.mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+        
+        // Call the existing mouse move handler for block info display
+        onMouseMove({
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+    }
+}
+
+// Ensure UI elements work properly on touch devices
+function ensureTouchCompatibility() {
+    // Add touch event handling for critical UI buttons
+    const criticalButtons = [
+        '#btn-about',
+        '#btn-togglesimulation', 
+        '#btn-brickmoving',
+        '.btn[data-bs-toggle="collapse"]'
+    ];
+    
+    criticalButtons.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(element => {
+            // Add explicit touch handling
+            element.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Trigger the click event
+                element.click();
+            }, { passive: false });
+        });
+    });
+    
+    // Ensure dropdown options work on touch
+    setTimeout(() => {
+        const dropdownOptions = document.querySelectorAll('.dropdown-content .option');
+        dropdownOptions.forEach(element => {
+            element.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                element.click();
+            }, { passive: false });
+        });
+    }, 1000); // Delay to ensure dropdown is created
+}
+
+// Helper functions to enable/disable block moving
+function enableBlockMoving() {
+    // Stop physics immediately
+    state.runPhysics = false;
+    
+    // Enable drag controls and disable orbit rotation
+    state.dragControls.enabled = true;
+    state.orbitControls.enableRotate = false;
+    state.orbitControls.enabled = false;
+}
+
+function disableBlockMoving() {
+    // Always restore orbit controls when manually disabling
+    state.orbitControls.enabled = true;
+    state.orbitControls.enableRotate = true;
+    
+    // For manual button toggle, disable drag controls
+    // For touch/meta key release, keep drag enabled for future use
+    if (!isTouchDevice && !metaKeyPressed) {
+        state.dragControls.enabled = false;
+    }
+    
+    // Enable physics
+    state.runPhysics = true;
 }
 
 function setupViewDropdown() {
@@ -194,16 +344,20 @@ function setupViewDropdown() {
     );
 }
 
-// Modify the drag controls to work better with the meta key
+// Setup drag controls for both mouse and touch interactions
 function setupDragControls() {
     state.dragControls = new DragControls(state.objects, state.camera, state.renderer.domElement);
     
     // Add dragstart listener to stop physics when dragging starts
-    state.dragControls.addEventListener('dragstart', function() {
+    state.dragControls.addEventListener('dragstart', function(event) {
         // Ensure physics is stopped when actually dragging an object
         state.runPhysics = false;
+        
+        // Disable orbit controls while dragging
+        state.orbitControls.enabled = false;
+        
+        console.log("Started dragging block");
     });
-    
     
     state.dragControls.addEventListener('dragend', function(event) {
         const object = event.object;
@@ -236,13 +390,35 @@ function setupDragControls() {
             physicsBody.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
         }
         
-        // Always enable physics when dropping a block, even if meta key is still pressed
-        // This lets blocks fall naturally after placement
+        // Re-enable physics when dropping a block
         state.runPhysics = true;
+        
+        // Always restore orbit controls unless meta key is held
+        if (!metaKeyPressed) {
+            state.orbitControls.enabled = true;
+            state.orbitControls.enableRotate = true;
+        }
+        
+        console.log("Finished dragging block");
     });
     
-    // Initially disable drag controls
-    state.dragControls.enabled = false;
+    // Initially enable drag controls for direct interaction
+    state.dragControls.enabled = true;
+    
+    // Set up proper interaction with orbit controls
+    state.dragControls.addEventListener('hoveron', function() {
+        // Temporarily reduce orbit control responsiveness when hovering over objects
+        if (state.orbitControls.enabled) {
+            state.orbitControls.enableRotate = false;
+        }
+    });
+    
+    state.dragControls.addEventListener('hoveroff', function() {
+        // Restore orbit controls when not hovering over objects
+        if (state.orbitControls.enabled && !isDragging) {
+            state.orbitControls.enableRotate = true;
+        }
+    });
 }
 
 function onMouseMove(event) {
