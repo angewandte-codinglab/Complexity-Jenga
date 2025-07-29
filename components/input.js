@@ -20,6 +20,12 @@ let metaKeyPressed = false;
 let isTouchDevice = false;
 let isDragging = false;
 
+function isMobile() {
+    const userAgent = navigator.userAgent;
+    // Simple check for mobile devices (phones), excluding tablets like iPad.
+    return /Mobi/i.test(userAgent) && !/iPad/i.test(userAgent);
+}
+
 function setupInputHandlers() {
     // Detect if this is a touch device
     isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -488,7 +494,7 @@ function onMouseMove(event) {
             }
         }
 
-        if (!modalOverlap) showBlockInfo(intersectedBlock, event);
+        if (!modalOverlap && !isMobile()) showBlockInfo(intersectedBlock, event);
 
         blockTouched = true;
     } else {
