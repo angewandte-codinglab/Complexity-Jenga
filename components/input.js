@@ -143,7 +143,7 @@ function setupInputHandlers() {
             const presetNames = Object.keys(state.cameraPresets);
             
             // Check if we have enough presets for this number
-            if (keyNum <= presetNames.length) {
+            if (keyNum <= presetNames.length-1) {
                 // Get preset name (subtract 1 because arrays are 0-indexed)
                 const presetName = presetNames[keyNum - 1];
                 
