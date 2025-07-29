@@ -497,7 +497,7 @@ function onMouseMove(event) {
         setTimeout(() => {
             blockTouched = false;
         }, 200);
-        showBlockInfo();
+        // showBlockInfo();
         
     }
 }
