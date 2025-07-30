@@ -41,3 +41,44 @@ Built with modern web technologies, the project features real-time physics simul
 Notable implementation details include country-based block matching during animated reconstructions, physics-synchronized rendering loops, and modular component architecture. The codebase includes a complete build system for production deployment with code minification and asset optimization.
 
 The project originated from the Visualizing Complexity Science Workshop 2024, focusing on semiconductor supply chain analysis, and has been developed into a full interactive web application suitable for educational and research applications.
+
+---
+
+## Ranking Systems and Data Visualization
+
+**Complexity-Jenga** employs a dual-encoding visualization system that represents both economic importance and network position within the global semiconductor supply chain.
+
+  Primary Ranking Systems
+
+  Number of Companies Ranking
+  - Sorts countries by total count of semiconductor companies
+  - Measures industrial capacity and manufacturing presence
+  - Reveals production powerhouses and manufacturing concentration
+
+  PageRank Ranking
+  - Sorts countries by network authority score (adapted from Google's PageRank algorithm)
+  - Measures influence and coordination capacity in supply networks
+  - Identifies strategic control points and coordination hubs
+
+  Visualization Encoding
+
+  Vertical Position (Tower Layer)
+  - Countries with higher ranking values appear at the tower base
+  - Lower-ranked countries occupy higher, more precarious positions
+  - Creates intuitive hierarchy of economic dominance
+
+  Block Count per Layer (Betweenness Centrality)
+  - Number of blocks (1-4) reflects each country's role as a network bridge
+  - More blocks indicate greater importance as supply chain intermediaries
+  - Reveals critical chokepoints independent of economic size
+
+  Analytical Insights
+
+  The dual-encoding system reveals complex supply chain dynamics:
+  - Economically large countries may occupy peripheral network positions
+  - Small countries can serve as critical network bridges
+  - Different ranking systems expose distinct vulnerability patterns
+  - Interactive switching between rankings demonstrates how various metrics create different structural fragilities
+
+  This approach enables users to explore both quantitative economic measures (company counts, network authority) and qualitative network
+  relationships (bridge positions, coordination roles) within a single interactive visualization.
