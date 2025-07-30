@@ -86,7 +86,7 @@ function createJengaTower() {
     const brickLength = 1.2*4; 
     const brickDepth = brickLength / 3;
     const brickHeight = brickLength / 4;
-    const heightOffset = 0.01;
+    const heightOffset = -0.001; // Slightly negative to avoid floating
     
     // Load data and create blocks
     import('./data.js').then(module => {
@@ -133,7 +133,9 @@ function createBlocksFromData(data, brickMass, brickLength, brickDepth, brickHei
         const x0 = isOddLayer ? -(numBricksPerLayer * brickDepth / numBricksPerLayer) : 0;
         const z0 = isOddLayer ? 0 : -(numBricksPerLayer * brickDepth / numBricksPerLayer);
         
-        pos.set(x0, (brickHeight + heightOffset) * (j + .5), z0);
+        // Position bricks so they sit exactly on top of each other
+        const layerY = j * brickHeight + brickHeight / 2; // Bottom of first layer at y=0, center at brickHeight/2
+        pos.set(x0, layerY, z0);
         quat.set(0, isOddLayer ? 0.7071 : 0, 0, isOddLayer ? 0.7071 : 1); // Rotate 90 degrees for odd layers
         
         // Create bricks
@@ -187,7 +189,7 @@ function createBlocksFromData(data, brickMass, brickLength, brickDepth, brickHei
 export function createParalellepiped(sx, sy, sz, mass, pos, quat, material) {
     const threeObject = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz, 1, 1, 1), material);
     const shape = new Ammo.btBoxShape(new Ammo.btVector3(sx * 0.5, sy * 0.5, sz * 0.5));
-    shape.setMargin(state.margin);
+    shape.setMargin(state.margin); // Smaller margin for tighter stacking
     
     createRigidBody(threeObject, shape, mass, pos, quat);
     
@@ -218,6 +220,10 @@ export function createRigidBody(threeObject, physicsShape, mass, pos, quat) {
     body.setDamping(0.01, 0.4);
     body.setCcdMotionThreshold(0.1);
     body.setCcdSweptSphereRadius(0.05);
+    
+    // Force activation - prevents bodies from being inactive/sleeping when physics starts
+    body.setActivationState(4); // DISABLE_DEACTIVATION - keeps body always active
+    body.activate(); // Explicitly activate the body
     
     threeObject.userData.physicsBody = body;
     
@@ -357,7 +363,7 @@ function calculateTowerLayout(data) {
     const brickLength = 1.2*4; 
     const brickDepth = brickLength / 3;
     const brickHeight = brickLength / 4;
-    const heightOffset = 0.01;
+    const heightOffset = 0;
     const numBricksPerLayer = 3;
     
     const newLayout = [];
@@ -371,7 +377,7 @@ function calculateTowerLayout(data) {
         const x0 = isOddLayer ? -(numBricksPerLayer * brickDepth / numBricksPerLayer) : 0;
         const z0 = isOddLayer ? 0 : -(numBricksPerLayer * brickDepth / numBricksPerLayer);
         
-        const layerY = (brickHeight + heightOffset) * (j + .5);
+        const layerY = j * brickHeight + brickHeight / 2;
         const quat = new THREE.Quaternion(0, isOddLayer ? 0.7071 : 0, 0, isOddLayer ? 0.7071 : 1);
         
         for (let i = 0; i < numBricksPerLayer; i++) {
@@ -562,6 +568,10 @@ function completeAnimationWithAssignments(assignments, newLayout) {
         body.setCcdMotionThreshold(0.1);
         body.setCcdSweptSphereRadius(0.05);
         
+        // Force activation for animated blocks
+        body.setActivationState(4); // DISABLE_DEACTIVATION
+        body.activate();
+        
         block.userData.physicsBody = body;
         state.physicsWorld.addRigidBody(body);
     });
@@ -637,6 +647,10 @@ function completeAnimation(existingBlocks, newLayout) {
         body.setDamping(0.01, 0.4);
         body.setCcdMotionThreshold(0.1);
         body.setCcdSweptSphereRadius(0.05);
+        
+        // Force activation for animated blocks
+        body.setActivationState(4); // DISABLE_DEACTIVATION
+        body.activate();
         
         block.userData.physicsBody = body;
         state.physicsWorld.addRigidBody(body);

@@ -37,7 +37,7 @@ const cameraPresets = {
 export const state = {
     // Constants
     gravityConstant: -9.8,
-    margin: 0.001,
+    margin: 0.,
     defaultTimeDiv: 0.8,
     showAllBricks: false,
     

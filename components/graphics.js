@@ -175,7 +175,7 @@ function updatePhysics(deltaTime) {
     state.physicsWorld.stepSimulation(deltaTime / state.timeDiv, 100);
     
     // Update rigid bodies
-    for (let i = 0; i < state.rigidBodies.length; i++) {
+    for (let i = state.rigidBodies.length - 1; i >= 0; i--) {
         const objThree = state.rigidBodies[i];
         const objPhys = objThree.userData.physicsBody;
         const ms = objPhys.getMotionState();
@@ -186,6 +186,16 @@ function updatePhysics(deltaTime) {
             const q = state.transformAux1.getRotation();
             objThree.position.set(p.x(), p.y(), p.z());
             objThree.quaternion.set(q.x(), q.y(), q.z(), q.w());
+            
+            // Remove objects that fall too far below ground (cleanup)
+            if (p.y() < -50) {
+                console.log('Removing fallen object');
+                state.physicsWorld.removeRigidBody(objPhys);
+                state.scene.remove(objThree);
+                state.rigidBodies.splice(i, 1);
+                const objectIndex = state.objects.indexOf(objThree);
+                if (objectIndex > -1) state.objects.splice(objectIndex, 1);
+            }
         }
     }
 }

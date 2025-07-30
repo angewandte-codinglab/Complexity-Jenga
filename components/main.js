@@ -19,7 +19,11 @@ function hideLoading() {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
         overlay.style.opacity = '0';
-        setTimeout(() => overlay.style.display = 'none', 300);
+        overlay.style.pointerEvents = 'none'; // Disable pointer events immediately
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            overlay.remove(); // Completely remove from DOM
+        }, 300);
     }
 }
 
@@ -55,6 +59,65 @@ Ammo().then(function(AmmoLib) {
     hideLoading();
 });
 
+function debugSettings() {
+    console.group('🔧 Complexity-Jenga Debug Settings');
+    
+    console.group('⚛️ Physics Settings');
+    console.log('Gravity:', state.gravityConstant);
+    console.log('Collision Margin:', state.margin);
+    console.log('Time Division:', state.timeDiv || state.defaultTimeDiv);
+    console.log('Show All Bricks:', state.showAllBricks);
+    console.groupEnd();
+    
+    console.group('📦 Brick Dimensions');
+    const brickLength = 1.2 * 4;
+    const brickDepth = brickLength / 3;
+    const brickHeight = brickLength / 4;
+    const brickMass = 100;
+    console.log('Length:', brickLength);
+    console.log('Depth:', brickDepth);
+    console.log('Height:', brickHeight);
+    console.log('Mass:', brickMass);
+    console.log('Volume:', brickLength * brickDepth * brickHeight);
+    console.groupEnd();
+    
+    console.group('🎮 Physics Body Settings');
+    console.log('Friction:', 0.5);
+    console.log('Restitution:', 0.4);
+    console.log('Linear Damping:', 0.01);
+    console.log('Angular Damping:', 0.4);
+    console.log('CCD Motion Threshold:', 0.1);
+    console.log('CCD Swept Sphere Radius:', 0.05);
+    console.log('Sleeping Thresholds:', '0.01, 0.01');
+    console.log('Activation State:', '4 (DISABLE_DEACTIVATION)');
+    console.log('Force Activate on Creation:', 'true');
+    console.groupEnd();
+    
+    console.group('🎨 Graphics Settings');
+    console.log('Renderer Size:', state.renderer ? `${state.renderer.domElement.width}x${state.renderer.domElement.height}` : 'Not initialized');
+    console.log('Shadow Map Type:', 'PCFSoftShadowMap');
+    console.log('Shadow Map Size:', '1024x1024');
+    console.log('Camera FOV:', 60);
+    console.log('Camera Near:', 1);
+    console.log('Camera Far:', 1000);
+    console.groupEnd();
+    
+    console.group('🏗️ Tower Construction');
+    console.log('Layer Height Formula:', 'j * brickHeight + brickHeight / 2');
+    console.log('Height Offset:', 0);
+    console.log('Bricks Per Layer:', 3);
+    console.log('Layer Rotation:', 'Alternating 90° (odd layers)');
+    console.groupEnd();
+    
+    console.group('🎯 Performance Settings');
+    console.log('Physics Solver Iterations:', 60);
+    console.log('Physics Step Max Sub Steps:', 100);
+    console.log('Animation Loop:', 'requestAnimationFrame');
+    console.groupEnd();
+    
+    console.groupEnd();
+}
+
 function init() {
     try {
         updateLoadingText('Setting up 3D Graphics...', 'Initializing WebGL renderer and scene');
@@ -62,6 +125,9 @@ function init() {
         
         updateLoadingText('Configuring Physics World...', 'Setting up collision detection and dynamics');
         initPhysics();
+        
+        // Output debug settings after physics initialization
+        debugSettings();
         
         updateLoadingText('Setting up User Interface...', 'Initializing controls and interactions');
         initInput();
