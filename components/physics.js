@@ -86,7 +86,7 @@ function createJengaTower() {
     const brickLength = 1.2*4; 
     const brickDepth = brickLength / 3;
     const brickHeight = brickLength / 4;
-    const heightOffset = -0.0008;
+    const heightOffset = 0.01;
     
     // Load data and create blocks
     import('./data.js').then(module => {
@@ -286,11 +286,36 @@ function createMaterialSimple(color) {
 }
 
 export function removeAllBlocks() {
-    // Remove rigid bodies from the physics world
+    // Remove rigid bodies from the physics world and dispose of Three.js resources
     state.rigidBodies.forEach(obj => {
+        // Remove from physics world
         state.physicsWorld.removeRigidBody(obj.userData.physicsBody);
+        
+        // Dispose of Three.js resources to prevent memory leaks
+        if (obj.geometry) {
+            obj.geometry.dispose();
+        }
+        if (obj.material) {
+            // Handle both single materials and material arrays
+            if (Array.isArray(obj.material)) {
+                obj.material.forEach(material => {
+                    if (material.map) material.map.dispose();
+                    if (material.normalMap) material.normalMap.dispose();
+                    if (material.roughnessMap) material.roughnessMap.dispose();
+                    material.dispose();
+                });
+            } else {
+                if (obj.material.map) obj.material.map.dispose();
+                if (obj.material.normalMap) obj.material.normalMap.dispose();
+                if (obj.material.roughnessMap) obj.material.roughnessMap.dispose();
+                obj.material.dispose();
+            }
+        }
+        
+        // Remove from scene
         state.scene.remove(obj);
     });
+    
     state.rigidBodies.length = 0; // Clear the array
     state.objects.length = 0; // Clear objects array too
 }
@@ -332,7 +357,7 @@ function calculateTowerLayout(data) {
     const brickLength = 1.2*4; 
     const brickDepth = brickLength / 3;
     const brickHeight = brickLength / 4;
-    const heightOffset = -0.0008;
+    const heightOffset = 0.01;
     const numBricksPerLayer = 3;
     
     const newLayout = [];

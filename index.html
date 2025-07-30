@@ -14,6 +14,26 @@
 </head>
 
 <body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="position-fixed w-100 h-100 d-flex flex-column align-items-center justify-content-center" style="top: 0; left: 0; background: rgba(0,0,0,0.8); z-index: 9999; color: white;">
+        <div class="spinner-border mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h4 id="loading-text">Initializing Physics Engine...</h4>
+        <p id="loading-detail" class="text-center">Please wait while we load the 3D environment</p>
+    </div>
+    
+    <!-- Error Banner -->
+    <div id="error-banner" class="alert alert-danger position-fixed w-100 d-none" style="top: 0; left: 0; z-index: 9998; margin: 0; border-radius: 0;">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <strong id="error-title">Error</strong>
+                <span id="error-message">Something went wrong</span>
+            </div>
+            <button type="button" class="btn-close" onclick="document.getElementById('error-banner').classList.add('d-none')"></button>
+        </div>
+    </div>
+
     <div id="viewContainer" class="d-flex position-relative container-fluid g-0">
         <div id="info">
             <div id="dropdown-container" class="col-12 my-1 mb-2"></div>
