@@ -22,7 +22,7 @@
             </button>
             <div class="collapse" id="mouseevents">
                 <!-- <div class="info-text d-flex flex-column card card-body"> -->
-                <ul class="list-group list-group-flush ps-2">
+                <!-- <ul class="list-group list-group-flush ps-2"> -->
                     <!-- <button type="button" class="d-flex align-items-center justify-content-between btn btn-sm btn-light mt-2 fw-bold" id="btn-recreate">
                         <div>Recreate tower</div><img class="key-icon" src="./imgs/key-space.svg">
                     </button> -->
@@ -36,14 +36,18 @@
                             <img class="key-icon" src="./imgs/mouse-left.svg">
                         </div>
                     </button> -->
-                </ul>
+                <!-- </ul> -->
                 <div class="ps-2 mt-2">
                     <div class="info-text p-2 fw-bold lh-1">
-                        <div class="my-1 d-flex align-items-center justify-content-between">Recreate tower <img class="key-icon" src="./imgs/key-space.svg"></div>
-                        <div class="my-1 d-flex align-items-center justify-content-between">View brick info <img class="key-icon" src="./imgs/mouse-hover.svg"></div>
-                        <div class="my-1 d-flex align-items-center justify-content-between">Orbit the view <img class="key-icon" src="./imgs/mouse-left.svg"></div>
-                        <div class="my-1 d-flex align-items-center justify-content-between">Pan the view <img class="key-icon" src="./imgs/mouse-right.svg"></div>
-                        <div class="my-1 d-flex align-items-center justify-content-between">Zoom the view <img class="key-icon" src="./imgs/mouse-wheel.svg"></div>
+                        <div class="my-1 d-flex align-items-center justify-content-between mouse-hint">Recreate tower <img class="key-icon" src="./imgs/key-space.svg"></div>
+                        <div class="my-1 d-flex align-items-center justify-content-between touch-hint">Recreate tower <button data-key="space" class="btn btn-sm btn-light fs-7 mx-1 py-1 px-2 lh-1"><span class="fs-7">SPACE</span></button></div>
+                        <div class="my-1 d-flex align-items-center justify-content-between mouse-hint">View brick info <img class="key-icon" src="./imgs/mouse-hover.svg"></div>
+                        <div class="my-1 d-flex align-items-center justify-content-between mouse-hint">Orbit the view <img class="key-icon" src="./imgs/mouse-left.svg"></div>
+                        <div class="my-1 d-flex align-items-center justify-content-between touch-hint">Orbit the view <img class="key-icon" src="./imgs/touch-orbit.svg"></div>
+                        <div class="my-1 d-flex align-items-center justify-content-between mouse-hint">Pan the view <img class="key-icon" src="./imgs/mouse-right.svg"></div>
+                        <div class="my-1 d-flex align-items-center justify-content-between touch-hint">Pan the view <img class="key-icon" src="./imgs/touch-pan.svg"></div>
+                        <div class="my-1 d-flex align-items-center justify-content-between mouse-hint">Zoom the view <img class="key-icon" src="./imgs/mouse-wheel.svg"></div>
+                        <div class="my-1 d-flex align-items-center justify-content-between touch-hint">Zoom the view <img class="key-icon" src="./imgs/touch-zoom.svg"></div>
                         <div class="my-1 d-flex align-items-center justify-content-between">Set the view <div class="d-flex" id="setview-buttons">
                                 <button data-key="1" class="btn btn-sm btn-light fs-7 mx-1 lh-1">1</button>
                                 <button data-key="2" class="btn btn-sm btn-light fs-7 mx-1 lh-1">2</button>
@@ -55,6 +59,7 @@
                 </div>
             </div>
         </div>
+        <div id="action-hint" class="p-2">Drag a brick away to remove it</div>
         <!-- Legend Button -->
         <div id="btns-about" class="col-12 d-flex align-items-center position-absolute">
             <button type="button" class="btn btn-sm btn-light fw-bold ms-2" data-bs-toggle="modal" data-bs-target="#about-modal" id="btn-about">+ Info</button>

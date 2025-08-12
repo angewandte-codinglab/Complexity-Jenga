@@ -76,7 +76,29 @@ a:hover {
     background: #e6e6e6;
     font-size: 0.85rem;
 }
-
+#action-hint{
+    background: #e6e6e6;
+    position: absolute;
+    bottom: 1em;
+    left: 50%;
+    transform: translateX(-50%);
+    -webkit-animation: inviting 1.5s infinite;
+    animation: inviting 1.5s infinite;
+    z-index: 1000;
+    width: fit-content;
+    white-space: nowrap;
+}
+@keyframes inviting {
+    0% {
+        transform: translateX(-50%) scale(0.9);
+    }
+    50% {
+        transform: translateX(-50%) scale(1);
+    }
+    100% {
+        transform: translateX(-50%) scale(0.9);
+    }
+}
 #info .list-group-item {
     background: transparent;
 }
@@ -251,3 +273,4 @@ select {
     height: 1em;
     width: 1em;
 }
+

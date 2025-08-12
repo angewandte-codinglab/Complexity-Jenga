@@ -77,6 +77,9 @@ export const state = {
     // Raycasting
     raycaster: new THREE.Raycaster(),
     mouse: new THREE.Vector2(),
+
+    //screen
+    isTouchDevice: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
     
     // Data
     currentView: null,
