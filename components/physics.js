@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { state } from './state.js';
+import { updateDragControls } from './input.js';
 
 export function initPhysics() {
     // Physics configuration
@@ -36,6 +37,9 @@ export function createObjects() {
 
     // Jenga blocks from data
     createJengaTower();
+    
+    // Update drag controls with the newly created objects
+    updateDragControls();
 }
 
 function createGroundInvisible(pos, quat) {
@@ -215,7 +219,7 @@ export function createRigidBody(threeObject, physicsShape, mass, pos, quat) {
     body.setFriction(.5);
     body.setRestitution(0.4);
     // body.setDamping(0.5, 1); // Linear and angular damping, more stability but less realistic behaviour
-    body.setDamping(0.01, 0.4);
+    body.setDamping(0.1, 0.4);
     body.setCcdMotionThreshold(0.1);
     body.setCcdSweptSphereRadius(0.05);
 
@@ -296,6 +300,8 @@ export function removeAllBlocks() {
 }
 
 export function animateRecreateTower() {
+    console.log('animateRecreateTower called - rigidBodies count:', state.rigidBodies.length, 'scene children:', state.scene.children.length);
+    
     // Stop physics during animation
     state.runPhysics = false;
     //hide hint if physics running
@@ -487,9 +493,12 @@ function matchBlocksToNewPositions(existingBlocks, newLayout) {
 }
 
 function completeAnimationWithAssignments(assignments, newLayout) {
+    console.log('completeAnimationWithAssignments called - assignments:', assignments.length, 'scene children:', state.scene.children.length);
+    
     // Remove blocks that don't have targets
-    assignments.forEach(assignment => {
+    assignments.forEach((assignment, index) => {
         if (assignment.block && !assignment.target) {
+            console.log(`Removing block ${index} without target during animation completion`);
             state.scene.remove(assignment.block);
             const rigidBodyIndex = state.rigidBodies.indexOf(assignment.block);
             const objectIndex = state.objects.indexOf(assignment.block);
@@ -536,7 +545,7 @@ function completeAnimationWithAssignments(assignments, newLayout) {
         body.setSleepingThresholds(0.01, 0.01);
         body.setFriction(.5);
         body.setRestitution(0.4);
-        body.setDamping(0.01, 0.4);
+        body.setDamping(0.1, 0.4);
         body.setCcdMotionThreshold(0.1);
         body.setCcdSweptSphereRadius(0.05);
 
@@ -612,13 +621,16 @@ function completeAnimation(existingBlocks, newLayout) {
         body.setSleepingThresholds(0.01, 0.01);
         body.setFriction(.5);
         body.setRestitution(0.4);
-        body.setDamping(0.01, 0.4);
+        body.setDamping(0.1, 0.4);
         body.setCcdMotionThreshold(0.1);
         body.setCcdSweptSphereRadius(0.05);
 
         block.userData.physicsBody = body;
         state.physicsWorld.addRigidBody(body);
     });
+
+    // Update drag controls with the updated objects
+    updateDragControls();
 
     console.log('Animated tower recreation complete');
 }

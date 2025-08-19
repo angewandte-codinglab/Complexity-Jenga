@@ -19,6 +19,13 @@ let lastHighlightedBlocks = null; //if contains items, in array format
 let metaKeyPressed = false;
 let isDragging = false;
 
+// Add a variable to track mouse button state
+let mouseButtonPressed = false;
+
+// Variables for throttled hover processing ---
+let lastMouseEvent = null;
+let hoverUpdateScheduled = false;
+
 function isMobile() {
     const userAgent = navigator.userAgent;
     // Simple check for mobile devices (phones), excluding tablets like iPad.
@@ -42,10 +49,12 @@ function setupInputHandlers() {
         // Mouse events
         document.addEventListener('mousedown', () => {
             state.timeDiv = 4;
+            mouseButtonPressed = true; // Track mouse button press
         });
 
         document.addEventListener('mouseup', () => {
             state.timeDiv = state.defaultTimeDiv;
+            mouseButtonPressed = false; // Reset when mouse button released
         });
 
         document.addEventListener('mousemove', onMouseMove);
@@ -351,12 +360,27 @@ function setupViewDropdown() {
     );
 }
 
+// Update drag controls when objects are created/changed
+export function updateDragControls() {
+    if (state.dragControls) {
+        console.log('Before update - DragControls has', state.dragControls.objects.length, 'objects, state.rigidBodies has', state.rigidBodies.length, 'objects, state.objects has', state.objects.length, 'objects');
+        
+        // Use the non-deprecated property
+        state.dragControls.objects.length = 0; // Clear existing
+        state.rigidBodies.forEach(obj => state.dragControls.objects.push(obj)); // Add current objects from rigidBodies
+        
+        console.log('After update - Updated DragControls with', state.dragControls.objects.length, 'objects');
+    }
+}
+
 // Setup drag controls for both mouse and touch interactions
 function setupDragControls() {
-    state.dragControls = new DragControls(state.objects, state.camera, state.renderer.domElement);
+    state.dragControls = new DragControls(state.rigidBodies, state.camera, state.renderer.domElement);
 
     // Add dragstart listener to stop physics when dragging starts
     state.dragControls.addEventListener('dragstart', function(event) {
+        console.log('Drag start - scene children count:', state.scene.children.length, 'rigidBodies count:', state.rigidBodies.length);
+        
         // Ensure physics is stopped when actually dragging an object
         state.runPhysics = false;
         //hide hint if physics running
@@ -365,8 +389,20 @@ function setupDragControls() {
         // Disable orbit controls while dragging
         state.orbitControls.enabled = false;
 
-        // Hide block info when dragging begins
-        showBlockInfo(); // This call with no parameters hides the info
+        // Hide only the info popup, but keep the highlight
+        const hoverBox = document.getElementById('hoverBox');
+        hoverBox.style.display = 'none';
+
+        // Clear all highlights and only highlight the dragged block
+        if (lastHighlightedBlocks) {
+            resetBlockHighlight(lastHighlightedBlocks);
+        }
+        
+        // Highlight only the block being dragged
+        const draggedBlock = event.object;
+        lastHighlightedBlocks = [draggedBlock];
+        blockHighlight(lastHighlightedBlocks);
+        state.currentHover = draggedBlock.userData.countryCode;
 
         isDragging = true; // Set dragging state
         // console.log("Started dragging block");
@@ -374,6 +410,8 @@ function setupDragControls() {
     });
 
     state.dragControls.addEventListener('dragend', function(event) {
+        console.log('Drag end START - scene children count:', state.scene.children.length, 'rigidBodies count:', state.rigidBodies.length);
+        
         const object = event.object;
         const physicsBody = object.userData.physicsBody;
 
@@ -401,13 +439,52 @@ function setupDragControls() {
         state.runPhysics = true;
         //hide hint if physics running
         d3.select('#action-hint').classed('d-none', state.runPhysics)
+        
+        console.log('Physics enabled, runPhysics:', state.runPhysics);
+        
+        // Mobile debugging: Just check visibility without changing anything
+        if (state.isTouchDevice) {
+            console.log('Mobile drag end - checking', state.rigidBodies.length, 'bodies');
+            let invisibleCount = 0;
+            state.rigidBodies.forEach((obj, index) => {
+                if (!obj.visible || obj.material.opacity < 1) {
+                    invisibleCount++;
+                }
+            });
+            console.log(`Found ${invisibleCount} invisible blocks on mobile - NOT FIXING YET`);
+        }
+        
         // Always restore orbit controls unless meta key is held
         if (!metaKeyPressed) {
             state.orbitControls.enabled = true;
             state.orbitControls.enableRotate = true;
         }
         isDragging = false; // Allow block info on hover again
-        // console.log("Finished dragging block");
+        
+        // Debug camera and rendering state
+        console.log('Camera position:', state.camera.position.toArray());
+        console.log('Camera looking at:', state.orbitControls.target.toArray());
+        console.log('Scene children visible:', state.scene.children.filter(child => child.visible).length);
+        console.log('RigidBodies visible:', state.rigidBodies.filter(obj => obj.visible).length);
+        console.log('Composer exists:', !!state.composer);
+        console.log('Renderer info:', {
+            domElement: !!state.renderer.domElement,
+            size: [state.renderer.domElement.width, state.renderer.domElement.height],
+            pixelRatio: window.devicePixelRatio
+        });
+        
+        // Force a render frame after mobile drag to ensure visibility
+        if (state.isTouchDevice) {
+            console.log('Mobile: Forcing render after drag end');
+            if (state.composer) {
+                state.composer.render();
+            } else {
+                state.renderer.render(state.scene, state.camera);
+            }
+        }
+        
+        console.log('Drag end FINISH - scene children count:', state.scene.children.length, 'rigidBodies count:', state.rigidBodies.length);
+        console.log("Finished dragging block, physics restarted, all bodies activated");
     });
 
     // Initially enable drag controls for direct interaction
@@ -432,87 +509,67 @@ function setupDragControls() {
 }
 
 function onMouseMove(event) {
-    //skip it if modal is on
-    // if (document.querySelector('.modal.show')) return;
-    // Calculate normalized mouse position
-    state.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    state.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    // Store the latest mouse event
+    lastMouseEvent = event;
+
+    // If an update isn't already scheduled, schedule one for the next frame
+    if (!hoverUpdateScheduled) {
+        hoverUpdateScheduled = true;
+        requestAnimationFrame(processHover);
+    }
+}
+
+function processHover() {
+    // We've run the update, so we can schedule a new one
+    hoverUpdateScheduled = false;
+    if (!lastMouseEvent) return;
+
+    // Calculate normalized mouse position from the last stored event
+    state.mouse.x = (lastMouseEvent.clientX / window.innerWidth) * 2 - 1;
+    state.mouse.y = -(lastMouseEvent.clientY / window.innerHeight) * 2 + 1;
 
     // Perform raycasting
     state.raycaster.setFromCamera(state.mouse, state.camera);
     const intersects = state.raycaster.intersectObjects(state.rigidBodies);
 
-    // Reset previous highlighted block if exists
-
-    //     if (lastHighlightedBlock) {
-    //         resetBlockHighlight(lastHighlightedBlock);
-    //         lastHighlightedBlock = null;
-    //     }
-
-    //     // Check if any block is intersected
-    //     if (intersects.length > 0) {
-    //         const intersectedBlock = intersects[0].object;
-
-    //         // Store original material properties if first time highlighting
-    //         if (!intersectedBlock.userData.hasOwnProperty('originalEmissive')) {
-    //             // Clone the color object instead of just storing the hex value
-    //             intersectedBlock.userData.originalEmissive = intersectedBlock.material.emissive.clone();
-    //             intersectedBlock.userData.originalEmissiveIntensity = intersectedBlock.material.emissiveIntensity;
-    //         }
-
-    //         // Apply highlighting effect
-    //         intersectedBlock.material.emissive.set(0xFFFFFF);
-    //         intersectedBlock.material.emissiveIntensity = 0.3;
-
-    //         // Track this block as the currently highlighted one
-    //         lastHighlightedBlock = intersectedBlock;
-
-    //         showBlockInfo(intersectedBlock, event);
-
-    // if (lastHighlightedBlocks) {
-    //     resetBlockHighlight(lastHighlightedBlocks);
-    //     lastHighlightedBlocks = null;
-    // }
-
     // Check if any block is intersected
     if (intersects.length > 0) {
         const intersectedBlock = intersects[0].object;
 
-        // // Skip showing block info if we're currently dragging
-        // let modalOverlap = false;
-        // const modal = document.querySelector('.modal.show');
-        // if (modal) {
-        //     const rect = modal.querySelector('.modal-dialog').getBoundingClientRect();
-        //     const mouseX = event.clientX;
-        //     const mouseY = event.clientY;
+        // Skip showing block info if we're currently dragging
+        let modalOverlap = false;
+        const modal = document.querySelector('.modal.show');
+        if (modal) {
+            const rect = modal.querySelector('.modal-dialog').getBoundingClientRect();
+            const mouseX = lastMouseEvent.clientX;
+            const mouseY = lastMouseEvent.clientY;
 
-        //     const isInsideModal =
-        //         mouseX >= rect.left &&
-        //         mouseX <= rect.right &&
-        //         mouseY >= rect.top &&
-        //         mouseY <= rect.bottom;
-        //     if (isInsideModal) {
-        //         modalOverlap = true;
-        //     }
-        // }
+            const isInsideModal =
+                mouseX >= rect.left &&
+                mouseX <= rect.right &&
+                mouseY >= rect.top &&
+                mouseY <= rect.bottom;
+            if (isInsideModal) {
+                modalOverlap = true;
+            }
+        }
 
-        // // Only show block info if not dragging, not in a modal, and not on mobile
-        // if (!modalOverlap && !isMobile() && !isDragging) {
-        //     showBlockInfo(intersectedBlock, event);
-        // }
-        // Only show block info if not dragging, not in a modal
-        // if (!isDragging) {
-        showBlockInfo(intersectedBlock, event);
-        // }
+        // Only show block info if not dragging, not in a modal, not on mobile, and no mouse button pressed
+        if (!modalOverlap && !isMobile() && !isDragging && !mouseButtonPressed) {
+            showBlockInfo(intersectedBlock, lastMouseEvent);
+        }
 
         blockTouched = true;
     } else {
 
-        // Add timeout before setting blockTouched to false
-        setTimeout(() => {
-            blockTouched = false;
-        }, 200);
-        showBlockInfo();
+        // Only clear highlights if not currently dragging
+        if (!isDragging) {
+            // Add timeout before setting blockTouched to false
+            setTimeout(() => {
+                blockTouched = false;
+            }, 200);
+            showBlockInfo();
+        }
 
     }
 }

@@ -175,7 +175,7 @@ function updatePhysics(deltaTime) {
     state.physicsWorld.stepSimulation(deltaTime / state.timeDiv, 100);
     
     // Update rigid bodies
-    for (let i = 0; i < state.rigidBodies.length; i++) {
+    for (let i = state.rigidBodies.length - 1; i >= 0; i--) {
         const objThree = state.rigidBodies[i];
         const objPhys = objThree.userData.physicsBody;
         const ms = objPhys.getMotionState();
@@ -186,6 +186,11 @@ function updatePhysics(deltaTime) {
             const q = state.transformAux1.getRotation();
             objThree.position.set(p.x(), p.y(), p.z());
             objThree.quaternion.set(q.x(), q.y(), q.z(), q.w());
+            
+            // Check if any blocks become invisible during physics update
+            if (!objThree.visible) {
+                console.log(`Block ${i} became invisible during physics update at position:`, p.y());
+            }
         }
     }
 }
