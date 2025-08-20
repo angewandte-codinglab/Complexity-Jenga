@@ -45,7 +45,8 @@ function setupInputHandlers() {
 
         // Ensure UI elements work properly on touch devices
         // ensureTouchCompatibility();
-        document.addEventListener('click', onMouseMove);
+        // Removed problematic global click listener that was causing
+        // accidental dropdown interactions after touch events
     } else {
         // Mouse events
         document.addEventListener('mousedown', () => {
@@ -220,8 +221,10 @@ function onTouchStart(event) {
         const intersects = state.raycaster.intersectObjects(state.rigidBodies);
 
         if (intersects.length > 0) {
-            // Only prevent default if we're actually touching a block
+            // Prevent all event propagation to avoid triggering dropdowns
             event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
 
             // Enable block moving for touch
             enableBlockMoving();
@@ -233,7 +236,10 @@ function onTouchStart(event) {
 
 function onTouchEnd(event) {
     if (isDragging) {
+        // Prevent all event propagation to avoid triggering dropdowns
         event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
 
         // Properly restore controls after dragging
         isDragging = false;
@@ -252,7 +258,10 @@ function onTouchEnd(event) {
 
 function onTouchMove(event) {
     if (isDragging && event.touches.length === 1) {
-        event.preventDefault(); // Only prevent default while actively dragging
+        // Prevent all event propagation to avoid triggering dropdowns
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
 
         const touch = event.touches[0];
 

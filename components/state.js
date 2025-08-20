@@ -82,7 +82,7 @@ export const state = {
     isTouchDevice: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
     
     // Data
-    currentView: null,
+    currentView: { id: "number_of_companies", name: 'Number of Companies' },
     viewContainer: d3.select('#dropdown-container'),
     colorScale: d3.scaleOrdinal()
         // .range(['#ff0000', '#ffff00', '#00ffff', '#0000ff', '#ff00ff'])
