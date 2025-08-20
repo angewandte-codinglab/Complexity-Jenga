@@ -109,8 +109,22 @@ function createJengaTower() {
             state.brick_layout.domain(d3.extent(results, d => d.mean_betweeness_centrality));
 
             // Sort data based on current view
-            // console.log(state.currentView.id);
+            console.log('🔍 DEBUGGING: Tower creation - currentView:', state.currentView);
+            console.log('🔍 DEBUGGING: Sorting by field:', state.currentView?.id);
+            console.log('🔍 DEBUGGING: Touch device:', state.isTouchDevice);
+            console.log('🔍 DEBUGGING: First 3 countries before sort:', results.slice(0, 3).map(d => ({
+                country: d.country, 
+                companies: d.number_of_companies, 
+                pagerank: d.mean_page_rank
+            })));
+            
             results.sort((a, b) => b[state.currentView.id] - a[state.currentView.id]);
+            
+            console.log('🔍 DEBUGGING: First 3 countries after sort:', results.slice(0, 3).map(d => ({
+                country: d.country, 
+                companies: d.number_of_companies, 
+                pagerank: d.mean_page_rank
+            })));
 
             // Limit to only the first N data entries if desired
             const limitLayers = false;
@@ -363,6 +377,10 @@ export function animateRecreateTower() {
             const results = data.results;
 
             // Sort data based on current view (same as createBlocksFromData)
+            console.log('🔄 DEBUGGING: Animation recreation - currentView:', state.currentView);
+            console.log('🔄 DEBUGGING: Animation sorting by field:', state.currentView?.id);
+            console.log('🔄 DEBUGGING: Touch device:', state.isTouchDevice);
+            
             results.sort((a, b) => b[state.currentView.id] - a[state.currentView.id]);
 
             // Calculate what the new tower should look like

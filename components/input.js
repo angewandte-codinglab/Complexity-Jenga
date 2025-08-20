@@ -345,7 +345,7 @@ function setupViewDropdown() {
         { id: "mean_page_rank", name: 'PageRank' }
     ];
 
-    state.currentView = viewOptions[0];
+    // currentView is already set with default in state.js, no need to reassign
 
     createDropdown(
         state.viewContainer,
@@ -353,19 +353,26 @@ function setupViewDropdown() {
         viewOptions,
         state.currentView,
         (selected) => {
+            console.log('🎯 DEBUGGING: Dropdown selection changed to:', selected);
+            console.log('🎯 DEBUGGING: Previous currentView was:', state.currentView);
+            console.log('🎯 DEBUGGING: Touch device:', state.isTouchDevice);
+            console.log('🎯 DEBUGGING: RigidBodies count:', state.rigidBodies.length);
+            
             state.currentView = selected;
 
             // Use animated recreation if blocks exist, otherwise create normally
             if (state.rigidBodies.length > 0) {
+                console.log('🎯 DEBUGGING: Calling animateRecreateTower due to dropdown change');
                 animateRecreateTower();
             } else {
+                console.log('🎯 DEBUGGING: Calling createObjects due to dropdown change');
                 state.runPhysics = false;
                 //hide hint if physics running
                 d3.select('#action-hint').classed('d-none', state.runPhysics)
                 removeAllBlocks();
                 createObjects();
             }
-            console.log(state.currentView);
+            console.log('🎯 DEBUGGING: Final currentView:', state.currentView);
         }
     );
 }
