@@ -255,7 +255,7 @@ export function createRigidBody(threeObject, physicsShape, mass, pos, quat) {
     body.setFriction(.5);
     body.setRestitution(0.4);
     // body.setDamping(0.5, 1); // Linear and angular damping, more stability but less realistic behaviour
-    body.setDamping(0.1, 0.4);
+    body.setDamping(0.15, 0.4);
     body.setCcdMotionThreshold(0.1);
     body.setCcdSweptSphereRadius(0.05);
 
@@ -603,7 +603,7 @@ function completeAnimationWithAssignments(assignments, newLayout) {
         body.setSleepingThresholds(0.01, 0.01);
         body.setFriction(.5);
         body.setRestitution(0.4);
-        body.setDamping(0.1, 0.4);
+        body.setDamping(0.15, 0.4);
         body.setCcdMotionThreshold(0.1);
         body.setCcdSweptSphereRadius(0.05);
 
@@ -679,7 +679,7 @@ function completeAnimation(existingBlocks, newLayout) {
         body.setSleepingThresholds(0.01, 0.01);
         body.setFriction(.5);
         body.setRestitution(0.4);
-        body.setDamping(0.1, 0.4);
+        body.setDamping(0.15, 0.4);
         body.setCcdMotionThreshold(0.1);
         body.setCcdSweptSphereRadius(0.05);
 
