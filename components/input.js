@@ -25,6 +25,7 @@ let mouseButtonPressed = false;
 // Variables for throttled hover processing ---
 let lastMouseEvent = null;
 let hoverUpdateScheduled = false;
+const HOVER_THROTTLE_DELAY = state.isTouchDevice ? 100 : 16; // Longer delay on mobile
 
 function isMobile() {
     const userAgent = navigator.userAgent;

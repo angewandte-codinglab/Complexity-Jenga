@@ -3,6 +3,31 @@ import { OrbitControls } from 'three/addons/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { state } from './state.js';
 
+// Performance monitoring
+let frameCount = 0;
+let lastTime = performance.now();
+let averageFPS = 60;
+
+function updatePerformanceStats() {
+    frameCount++;
+    const currentTime = performance.now();
+    
+    if (currentTime - lastTime >= 1000) { // Update every second
+        averageFPS = Math.round((frameCount * 1000) / (currentTime - lastTime));
+        
+        // Auto-adjust quality on mobile if performance is poor
+        if (state.isTouchDevice && averageFPS < 30) {
+            if (state.renderer.getPixelRatio() > 1) {
+                console.warn(`Low FPS detected (${averageFPS}), reducing pixel ratio`);
+                state.renderer.setPixelRatio(1);
+            }
+        }
+        
+        frameCount = 0;
+        lastTime = currentTime;
+    }
+}
+
 export function initGraphics() {
     // Set up container
     state.container = document.getElementById('container');
@@ -21,11 +46,27 @@ export function initGraphics() {
     state.scene = new THREE.Scene();
     state.scene.background = new THREE.Color(0xCCCCCC);
     
-    // Set up renderer
-    state.renderer = new THREE.WebGLRenderer({ antialias: true });
-    state.renderer.setPixelRatio(window.devicePixelRatio);
+    // Set up renderer with mobile optimizations
+    const isMobile = state.isTouchDevice;
+    state.renderer = new THREE.WebGLRenderer({ 
+        antialias: !isMobile, // Disable antialiasing on mobile for better performance
+        powerPreference: "high-performance",
+        stencil: false, // Disable stencil buffer for better performance
+        depth: true
+    });
+    
+    // Optimize pixel ratio for mobile
+    const pixelRatio = Math.min(window.devicePixelRatio, isMobile ? 2 : 3);
+    state.renderer.setPixelRatio(pixelRatio);
     state.renderer.setSize(window.innerWidth, window.innerHeight);
+    
+    // Shadow map optimizations
     state.renderer.shadowMap.enabled = true;
+    state.renderer.shadowMap.type = isMobile ? THREE.BasicShadowMap : THREE.PCFShadowMap;
+    
+    // Performance optimizations
+    state.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    
     state.container.appendChild(state.renderer.domElement);
     
     // Set up orbit controls
@@ -166,8 +207,9 @@ export function render() {
     } else {
         state.renderer.render(state.scene, state.camera);
     }
-
-    // state.renderer.render(state.scene, state.camera);
+    
+    // Update performance monitoring
+    updatePerformanceStats();
 }
 
 function updatePhysics(deltaTime) {

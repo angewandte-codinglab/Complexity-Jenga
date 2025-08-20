@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { state } from './state.js';
 import { updateDragControls } from './input.js';
+import { hideLoadingOverlay } from './main.js';
 
 export function initPhysics() {
     // Physics configuration
@@ -93,8 +94,11 @@ function createJengaTower() {
     const heightOffset = -0.0008;
 
     // Load data and create blocks
+    console.log('📊 Starting data loading...');
     import('./data.js').then(module => {
+        console.log('📊 Data module loaded, loading CSV data...');
         module.loadData().then(data => {
+            console.log('📊 CSV data loaded successfully, creating blocks...');
             state.datasets = data; //store data
 
             const results = data.results; // ← FIX: extract results array
@@ -117,7 +121,17 @@ function createJengaTower() {
             }
 
             createBlocksFromData(data, brickMass, brickLength, brickDepth, brickHeight, heightOffset);
+        }).catch(error => {
+            console.error('❌ Failed to load data:', error);
+            setTimeout(() => {
+                hideLoadingOverlay();
+            }, 100);
         });
+    }).catch(error => {
+        console.error('❌ Failed to import data module:', error);
+        setTimeout(() => {
+            hideLoadingOverlay();
+        }, 100);
     });
 }
 
@@ -186,6 +200,14 @@ function createBlocksFromData(data, brickMass, brickLength, brickDepth, brickHei
             }
         }
     });
+    
+    console.log(`🏗️ Tower building complete! Created ${data.length} layers with ${state.rigidBodies.length} blocks`);
+    
+    // Hide loading overlay now that the tower is built
+    setTimeout(() => {
+        console.log('⏰ Timeout reached, attempting to hide loading screen...');
+        hideLoadingOverlay();
+    }, 100);
 }
 
 export function createParalellepiped(sx, sy, sz, mass, pos, quat, material) {
@@ -290,11 +312,29 @@ function createMaterialSimple(color) {
 }
 
 export function removeAllBlocks() {
-    // Remove rigid bodies from the physics world
+    // Remove rigid bodies from the physics world and dispose of resources
     state.rigidBodies.forEach(obj => {
+        // Remove from physics world
         state.physicsWorld.removeRigidBody(obj.userData.physicsBody);
+        
+        // Dispose of Three.js resources
+        if (obj.geometry) {
+            obj.geometry.dispose();
+        }
+        if (obj.material) {
+            if (obj.material.map) obj.material.map.dispose();
+            obj.material.dispose();
+        }
+        
+        // Remove from scene
         state.scene.remove(obj);
+        
+        // Clean up physics body
+        if (obj.userData.physicsBody) {
+            Ammo.destroy(obj.userData.physicsBody);
+        }
     });
+    
     state.rigidBodies.length = 0; // Clear the array
     state.objects.length = 0; // Clear objects array too
 }
