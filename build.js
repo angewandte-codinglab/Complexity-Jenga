@@ -100,7 +100,8 @@ async function copyStaticAssets() {
 
 /**
  * Minify JavaScript files using Terser
- * Removes comments, console.log statements, and unnecessary whitespace
+ * Removes all console logging, comments, debugger statements, and unnecessary whitespace
+ * Eliminates dead code and unused variables/functions
  * Mangles variable names for additional size reduction
  */
 async function minifyJavaScript() {
@@ -137,12 +138,22 @@ async function minifyJavaScript() {
       try {
         const result = await minify(code, {
           compress: {
-            drop_console: true,    // Remove console.log statements
-            drop_debugger: true    // Remove debugger statements
+            drop_console: true,      // Remove all console.* statements
+            drop_debugger: true,     // Remove debugger statements
+            pure_funcs: [            // Remove specific function calls considered "pure"
+              'console.log',
+              'console.warn', 
+              'console.error',
+              'console.info',
+              'console.debug',
+              'console.trace'
+            ],
+            dead_code: true,         // Remove unreachable code
+            unused: true             // Remove unused variables/functions
           },
-          mangle: true,            // Shorten variable names
+          mangle: true,              // Shorten variable names  
           format: {
-            comments: false        // Remove all comments
+            comments: false          // Remove all comments
           }
         });
         
