@@ -273,4 +273,11 @@ select {
     height: 1em;
     width: 1em;
 }
-
+.codinglab-logo img{
+    height: 4em;
+    width: auto;
+}
+.csh-logo img{
+    height: 2.3em;
+    width: auto;
+}
